@@ -23,3 +23,6 @@ services:
       - db
     networks:
       - internal
+
+networks:
+  internal:
