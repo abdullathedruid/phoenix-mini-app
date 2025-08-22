@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17.6
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=miniapp
+    ports:
+      - 5432:5432
+  miniapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    environment:
+      - MIX_ENV=prod
+      - DATABASE_URL=${DATABASE_URL:-ecto://postgres:postgres@db:5432/miniapp}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-RKUBr1k7mcc1MvJhl659VgABcQjW1fgcj09qgxKLt2OCsWT3XU1WtkjnfgQGbdtx}
+    depends_on:
+      - db
