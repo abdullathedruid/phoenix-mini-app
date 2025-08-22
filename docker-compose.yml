@@ -7,6 +7,8 @@ services:
       - POSTGRES_DB=miniapp
     ports:
       - 5432:5432
+    networks:
+      - internal
   miniapp:
     build:
       context: .
@@ -19,3 +21,5 @@ services:
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-RKUBr1k7mcc1MvJhl659VgABcQjW1fgcj09qgxKLt2OCsWT3XU1WtkjnfgQGbdtx}
     depends_on:
       - db
+    networks:
+      - internal
