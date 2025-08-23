@@ -16,12 +16,30 @@ services:
     ports:
       - 4000:4000
     environment:
-      - MIX_ENV=prod
       - DATABASE_URL=${DATABASE_URL:-ecto://postgres:postgres@db:5432/miniapp}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-RKUBr1k7mcc1MvJhl659VgABcQjW1fgcj09qgxKLt2OCsWT3XU1WtkjnfgQGbdtx}
       - PHX_HOST=${PHX_HOST:-localhost}
     depends_on:
       - db
+      - otel-collector
+    networks:
+      - internal
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config", "/conf/otel-collector-config.yml"]
+    ports:
+      - 4317:4317
+      - 4318:4318
+    networks:
+      - internal
+    volumes:
+      - ./docker/otel-collector/otel-collector-config.yml:/conf/otel-collector-config.yml
+    links:
+      - jaeger-all-in-one
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - 16686:16686
     networks:
       - internal
 

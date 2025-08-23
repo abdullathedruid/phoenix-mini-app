@@ -67,6 +67,17 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  # OpenTelemetry (prod)
+  config :opentelemetry,
+    resource: %{service: %{name: "miniapp"}},
+    span_processor: :batch,
+    traces_exporter: :otlp
+
+  config :opentelemetry_exporter,
+    otlp_protocol: :http_protobuf,
+    otlp_endpoint:
+      System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://otel-collector:4318"
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

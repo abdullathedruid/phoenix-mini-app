@@ -7,6 +7,10 @@ defmodule Miniapp.Application do
 
   @impl true
   def start(_type, _args) do
+    OpentelemetryBandit.setup()
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+    OpentelemetryEcto.setup([:miniapp, :repo])
+
     children = [
       MiniappWeb.Telemetry,
       Miniapp.Repo,

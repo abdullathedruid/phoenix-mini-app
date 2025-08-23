@@ -8,6 +8,7 @@ defmodule Miniapp.MixProject do
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      releases: releases(),
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
@@ -28,6 +29,14 @@ defmodule Miniapp.MixProject do
   def cli do
     [
       preferred_envs: [precommit: :test]
+    ]
+  end
+
+  defp releases do
+    [
+      miniapp: [
+        applications: [opentelemetry: :temporary, opentelemetry_exporter: :permanent]
+      ]
     ]
   end
 
@@ -64,7 +73,13 @@ defmodule Miniapp.MixProject do
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry_api, "~> 1.4"},
+      {:opentelemetry_exporter, "~> 1.8"},
+      {:opentelemetry_phoenix, "~> 2.0"},
+      {:opentelemetry_ecto, "~> 1.2"},
+      {:opentelemetry_bandit, "~> 0.3"}
     ]
   end
 
