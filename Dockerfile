@@ -96,6 +96,10 @@ ARG GIT_AUTHOR=unspecified
 ENV GIT_SHA=${GIT_SHA}
 ENV GIT_AUTHOR=${GIT_AUTHOR}
 
+# Bake git metadata into the image for runtime discovery by PromEx
+RUN printf "%s" "$GIT_SHA" > /etc/git_sha \
+  && printf "%s" "$GIT_AUTHOR" > /etc/git_author
+
 USER nobody
 
 # If using an environment that doesn't automatically reap zombie processes, it is

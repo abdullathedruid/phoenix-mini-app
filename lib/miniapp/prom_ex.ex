@@ -81,12 +81,12 @@ defmodule Miniapp.PromEx do
 
   @doc false
   def git_sha do
-    System.get_env("GIT_SHA") || read_git_meta_file("/etc/git_sha") || "unknown"
+    read_git_meta_file("/etc/git_sha") || System.get_env("GIT_SHA") || "unknown"
   end
 
   @doc false
   def git_author do
-    System.get_env("GIT_AUTHOR") || read_git_meta_file("/etc/git_author") || "unknown"
+    read_git_meta_file("/etc/git_author") || System.get_env("GIT_AUTHOR") || "unknown"
   end
 
   defp read_git_meta_file(path) do
