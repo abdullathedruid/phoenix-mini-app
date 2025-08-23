@@ -42,7 +42,7 @@ services:
       - TEMPO_URL=${TEMPO_URL:-http://tempo:3200}
       - LOKI_URL=${LOKI_URL:-http://loki:3100}
     ports:
-      - 3000:3000
+      - 3001:3000
     networks:
       - internal
     volumes:
