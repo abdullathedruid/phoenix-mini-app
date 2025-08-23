@@ -3,6 +3,7 @@ services:
     image: grafana/loki:latest
     command:
       -config.file=/etc/loki/local-config.yaml
+    user: "10001:10001"
     ports:
       - 3100:3100
     networks:
@@ -14,6 +15,7 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/var/lib/prometheus/data
+    user: "65534:65534"
     ports:
       - 9090:9090
     networks:
@@ -26,6 +28,7 @@ services:
     image: grafana/tempo:latest
     command:
       - --config.file=/etc/tempo/tempo.yml
+    user: "10001:10001"
     ports:
       - 3200:3200
       - 4317:4317
@@ -37,6 +40,7 @@ services:
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
+    user: "472:472"
     environment:
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
       - TEMPO_URL=${TEMPO_URL:-http://tempo:3200}
