@@ -45,6 +45,7 @@ services:
       - 3001:3000
     networks:
       - internal
+      - dokploy-network
     volumes:
       - ./volumes/grafana:/var/lib/grafana
       - ./docker/grafana:/etc/grafana/provisioning
@@ -61,3 +62,5 @@ services:
     restart: unless-stopped
 networks:
   internal:
+  dokploy-network:
+    external: true
