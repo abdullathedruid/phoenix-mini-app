@@ -1,19 +1,4 @@
 services:
-  alloy:
-    image: grafana/alloy:latest
-    command: 
-      - run
-      - --server.http.listen-addr=0.0.0.0:12345
-      - --storage.path=/var/lib/alloy/data
-      - /etc/alloy/config.alloy
-    ports:
-      - 12345:12345
-    networks:
-      - internal
-    volumes:
-      - ./volumes/alloy:/var/lib/alloy/data
-      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy
-    restart: unless-stopped
   loki:
     image: grafana/loki:latest
     command:
@@ -55,6 +40,7 @@ services:
     environment:
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
       - TEMPO_URL=${TEMPO_URL:-http://tempo:3200}
+      - LOKI_URL=${LOKI_URL:-http://loki:3100}
     ports:
       - 3000:3000
     networks:
@@ -62,6 +48,16 @@ services:
     volumes:
       - ./volumes/grafana:/var/lib/grafana
       - ./docker/grafana:/etc/grafana/provisioning
+    restart: unless-stopped
+  promtail:
+    image: grafana/promtail:latest
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - internal
+    volumes:
+      - ./docker/promtail/config.yml:/etc/promtail/config.yml:ro
+      - ./volumes/promtail:/var/lib/promtail
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 networks:
   internal:

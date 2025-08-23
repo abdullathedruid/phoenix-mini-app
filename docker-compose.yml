@@ -19,6 +19,8 @@ services:
       - DATABASE_URL=${DATABASE_URL:-ecto://postgres:postgres@db:5432/miniapp}
       - SECRET_KEY_BASE=${SECRET_KEY_BASE:-RKUBr1k7mcc1MvJhl659VgABcQjW1fgcj09qgxKLt2OCsWT3XU1WtkjnfgQGbdtx}
       - PHX_HOST=${PHX_HOST:-localhost}
+      - OTEL_COLLECTOR_HOST=${OTEL_COLLECTOR_HOST:-tempo}
+      - OTEL_COLLECTOR_PORT=${OTEL_COLLECTOR_PORT:-4318}
     depends_on:
       - db
     networks:

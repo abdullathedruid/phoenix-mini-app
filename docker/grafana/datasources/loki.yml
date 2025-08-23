@@ -1,0 +1,9 @@
+apiVersion: 1
+
+datasources:
+  - name: loki
+    type: loki
+    access: proxy
+    url: $LOKI_URL
+    editable: true
+

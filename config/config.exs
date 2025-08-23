@@ -60,6 +60,10 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# OpenTelemetry
+config :opentelemetry,
+  resource: %{service: %{name: "miniapp"}}
+
 # PromEx
 config :miniapp, Miniapp.PromEx,
   manual_metrics_start_delay: :no_delay,

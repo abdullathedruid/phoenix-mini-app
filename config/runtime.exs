@@ -67,16 +67,24 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  # OpenTelemetry (prod)
-  config :opentelemetry,
-    resource: %{service: %{name: "miniapp"}},
-    span_processor: :batch,
-    traces_exporter: :otlp
+  otel_collector_host = System.get_env("OTEL_COLLECTOR_HOST")
+  otel_collector_port = System.get_env("OTEL_COLLECTOR_PORT")
+  if otel_collector_host && otel_collector_port do
+    otel_collector_host = String.to_charlist(otel_collector_host)
+    {otel_collector_port, ""} = Integer.parse(otel_collector_port)
 
-  config :opentelemetry_exporter,
-    otlp_protocol: :http_protobuf,
-    otlp_endpoint:
-      System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://alloy:4318"
+    config :opentelemetry, :processors,
+      otel_batch_processor: %{
+        exporter: {
+          :opentelemetry_exporter,
+          %{
+            endpoints: [
+              {:http, otel_collector_host, otel_collector_port, []}
+            ]
+          }
+        }
+      }
+    end
 
   # ## SSL Support
   #
