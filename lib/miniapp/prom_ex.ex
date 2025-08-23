@@ -60,7 +60,12 @@ defmodule Miniapp.PromEx do
   def plugins do
     [
       # PromEx built in plugins
-      Plugins.Application,
+      {Plugins.Application,
+       [
+         otp_app: :miniapp,
+         git_sha_mfa: {Miniapp.PromEx, :git_sha, []},
+         git_author_mfa: {Miniapp.PromEx, :git_author, []}
+       ]},
       Plugins.Beam,
       {Plugins.Phoenix, router: MiniappWeb.Router, endpoint: MiniappWeb.Endpoint},
       Plugins.Ecto,
@@ -72,6 +77,23 @@ defmodule Miniapp.PromEx do
       # Add your own PromEx metrics plugins
       # Miniapp.Users.PromExPlugin
     ]
+  end
+
+  @doc false
+  def git_sha do
+    System.get_env("GIT_SHA") || read_git_meta_file("/etc/git_sha") || "unknown"
+  end
+
+  @doc false
+  def git_author do
+    System.get_env("GIT_AUTHOR") || read_git_meta_file("/etc/git_author") || "unknown"
+  end
+
+  defp read_git_meta_file(path) do
+    case File.read(path) do
+      {:ok, contents} -> String.trim(contents)
+      _ -> nil
+    end
   end
 
   @impl true

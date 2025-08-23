@@ -13,9 +13,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - GIT_SHA=${GIT_SHA}
-        - GIT_AUTHOR=${GIT_AUTHOR}
     ports:
       - 4000:4000
     environment:

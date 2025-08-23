@@ -23,6 +23,8 @@
 .git
 !.git/HEAD
 !.git/refs
+!.git/packed-refs
+!.git/objects
 
 # Common development/test artifacts
 /cover/

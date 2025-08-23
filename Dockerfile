@@ -17,8 +17,6 @@ ARG DEBIAN_VERSION=bookworm-20250811-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
-ARG GIT_SHA
-ARG GIT_AUTHOR
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -29,6 +27,13 @@ RUN apt-get update \
 
 # prepare build dir
 WORKDIR /app
+
+# Copy git metadata and compute commit SHA and author
+COPY .git .git
+RUN GIT_SHA=$(git rev-parse HEAD | cut -c1-12) \
+  && GIT_AUTHOR=$(git log -n 1 --pretty=format:%an) \
+  && echo -n "$GIT_SHA" > /git_sha \
+  && echo -n "$GIT_AUTHOR" > /git_author
 
 # install hex + rebar
 RUN mix local.hex --force \
@@ -71,8 +76,6 @@ RUN mix release
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE} AS final
-ARG GIT_SHA
-ARG GIT_AUTHOR
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses5 locales ca-certificates \
@@ -86,9 +89,6 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-ENV GIT_SHA=$GIT_SHA
-ENV GIT_AUTHOR=$GIT_AUTHOR
-
 WORKDIR "/app"
 RUN chown nobody /app
 
@@ -97,6 +97,10 @@ ENV MIX_ENV="prod"
 
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/miniapp ./
+
+# Copy git metadata files for runtime access
+COPY --from=builder /git_sha /etc/git_sha
+COPY --from=builder /git_author /etc/git_author
 
 USER nobody
 
