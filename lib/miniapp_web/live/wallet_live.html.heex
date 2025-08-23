@@ -1,8 +1,15 @@
 <Layouts.flash_group flash={@flash} />
-<div class="px-4 py-4 min-h-screen grid grid-rows-[auto,1fr,auto] max-w-md mx-auto">
+<div class="px-4 min-h-screen grid grid-rows-[auto,1fr,auto] max-w-md mx-auto">
   <div class="flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <span class="badge badge-outline">Base</span>
+    <div class="flex items-center gap-4">
+      <%= if @user_pfp_url do %>
+        <img src={@user_pfp_url} alt={@user_display_name} class="w-10 h-10 rounded-full" />
+      <% else %>
+        <div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center">
+          <span class="text-base-content/70">{@user_fid}</span>
+        </div>
+      <% end %>
+      <span class="text-base-content/70">{@user_display_name}</span>
     </div>
     <Layouts.theme_toggle />
   </div>
@@ -16,8 +23,8 @@
     </div>
 
     <div class="space-y-2">
-      <h1 class="text-2xl font-extrabold tracking-tight">Wallet</h1>
-      <p class="text-base-content/70">Connect your wallet to get started.</p>
+      <h1 class="text-2xl font-extrabold tracking-tight">My app</h1>
+      <p class="text-base-content/70">This is a work in progress</p>
     </div>
 
     <div class="w-full flex flex-col gap-3">
