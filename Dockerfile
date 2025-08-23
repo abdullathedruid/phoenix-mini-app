@@ -18,6 +18,31 @@ ARG DEBIAN_VERSION=bookworm-20250811-slim
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
+# Isolated stage: compute git metadata so HEAD changes don't invalidate heavy build layers
+FROM ${RUNNER_IMAGE} AS gitmeta
+WORKDIR /git
+COPY .git/ .git/
+RUN set -e; \
+  if grep -q '^ref:' .git/HEAD; then \
+    HEAD_REF=$(cut -d' ' -f2 .git/HEAD); \
+    if [ -f ".git/$HEAD_REF" ]; then \
+      FULL_SHA=$(cat ".git/$HEAD_REF"); \
+    elif [ -f ".git/packed-refs" ]; then \
+      FULL_SHA=$(grep " $HEAD_REF$" .git/packed-refs | tail -n1 | cut -d' ' -f1); \
+    else \
+      FULL_SHA=""; \
+    fi; \
+  else \
+    FULL_SHA=$(cat .git/HEAD); \
+  fi; \
+  SHORT_SHA=$(printf '%s' "$FULL_SHA" | head -c12); \
+  LAST_LOG=$(tail -n1 .git/logs/HEAD || true); \
+  AUTHOR=$(printf '%s' "$LAST_LOG" | sed -E 's/^[0-9a-f]{40} [0-9a-f]{40} //; s/ <.*$//'); \
+  : "${SHORT_SHA:=unknown}"; \
+  : "${AUTHOR:=unknown}"; \
+  printf '%s' "$SHORT_SHA" > git_sha; \
+  printf '%s' "$AUTHOR" > git_author
+
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
@@ -27,27 +52,6 @@ RUN apt-get update \
 
 # prepare build dir
 WORKDIR /app
-
-# Copy minimal git metadata and compute commit SHA and author without git
-COPY .git/HEAD .git/HEAD
-COPY .git/refs .git/refs
-COPY .git/packed-refs .git/packed-refs
-COPY .git/logs/HEAD .git/logs/HEAD
-RUN set -e; \
-  HEAD_REF=$(cat .git/HEAD | awk '{print $2}'); \
-  if [ -n "$HEAD_REF" ]; then \
-    if [ -f ".git/$HEAD_REF" ]; then \
-      FULL_SHA=$(cat ".git/$HEAD_REF"); \
-    else \
-      FULL_SHA=$(awk -v ref="$HEAD_REF" '$2==ref {print $1}' .git/packed-refs | tail -n1); \
-    fi; \
-  else \
-    FULL_SHA=$(cat .git/HEAD); \
-  fi; \
-  SHORT_SHA=$(echo "$FULL_SHA" | head -c12); \
-  AUTHOR=$(awk '{a=$0} END{print a}' .git/logs/HEAD | awk -F" " '{print $3}'); \
-  echo -n "$SHORT_SHA" > /git_sha; \
-  echo -n "$AUTHOR" > /git_author
 
 # install hex + rebar
 RUN mix local.hex --force \
@@ -113,8 +117,8 @@ ENV MIX_ENV="prod"
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/miniapp ./
 
 # Copy git metadata files for runtime access
-COPY --from=builder /git_sha /etc/git_sha
-COPY --from=builder /git_author /etc/git_author
+COPY --from=gitmeta /git/git_sha /etc/git_sha
+COPY --from=gitmeta /git/git_author /etc/git_author
 
 USER nobody
 
