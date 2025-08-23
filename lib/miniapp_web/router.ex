@@ -20,6 +20,12 @@ defmodule MiniappWeb.Router do
     get "/", PageController, :home
   end
 
+  scope "/api", MiniappWeb do
+    pipe_through :api
+
+    get "/dice", DiceController, :roll
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", MiniappWeb do
   #   pipe_through :api
