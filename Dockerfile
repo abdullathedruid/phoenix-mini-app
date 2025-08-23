@@ -28,12 +28,26 @@ RUN apt-get update \
 # prepare build dir
 WORKDIR /app
 
-# Copy git metadata and compute commit SHA and author
-COPY .git .git
-RUN GIT_SHA=$(git rev-parse HEAD | cut -c1-12) \
-  && GIT_AUTHOR=$(git log -n 1 --pretty=format:%an) \
-  && echo -n "$GIT_SHA" > /git_sha \
-  && echo -n "$GIT_AUTHOR" > /git_author
+# Copy minimal git metadata and compute commit SHA and author without git
+COPY .git/HEAD .git/HEAD
+COPY .git/refs .git/refs
+COPY .git/packed-refs .git/packed-refs
+COPY .git/logs/HEAD .git/logs/HEAD
+RUN set -e; \
+  HEAD_REF=$(cat .git/HEAD | awk '{print $2}'); \
+  if [ -n "$HEAD_REF" ]; then \
+    if [ -f ".git/$HEAD_REF" ]; then \
+      FULL_SHA=$(cat ".git/$HEAD_REF"); \
+    else \
+      FULL_SHA=$(awk -v ref="$HEAD_REF" '$2==ref {print $1}' .git/packed-refs | tail -n1); \
+    fi; \
+  else \
+    FULL_SHA=$(cat .git/HEAD); \
+  fi; \
+  SHORT_SHA=$(echo "$FULL_SHA" | head -c12); \
+  AUTHOR=$(awk '{a=$0} END{print a}' .git/logs/HEAD | awk -F">" '{print $1}' | awk -F"<" '{print $1}' | xargs); \
+  echo -n "$SHORT_SHA" > /git_sha; \
+  echo -n "$AUTHOR" > /git_author
 
 # install hex + rebar
 RUN mix local.hex --force \
