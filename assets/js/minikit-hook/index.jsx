@@ -8,11 +8,10 @@ import App from "./App"
  */
 const WalletHook = {
   mounted() {
-    console.log("mounted")
     const root = createRoot(this.el)
     root.render(
       <MiniKitProvider>
-        <App pushEvent={this.pushEvent} />
+        <App pushEvent={(event, payload, onReply) => this.pushEvent(event, payload, onReply)} />
       </MiniKitProvider>
     )
   }

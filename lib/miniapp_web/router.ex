@@ -7,9 +7,16 @@ defmodule MiniappWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {MiniappWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers,%{
-      "content-security-policy" => "default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors *"
-    }
+  end
+
+  # https://elixirforum.com/t/how-to-embed-a-liveview-via-iframe/65066
+  pipeline :embedded do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {MiniappWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug MiniappWeb.Plugs.Embedded
   end
 
   pipeline :api do
@@ -20,6 +27,14 @@ defmodule MiniappWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  scope "/embed", MiniappWeb do
+    pipe_through :embedded
+
+    live_session :embedded, layout: {MiniappWeb.Layouts, :root} do
+      live "/wallet", WalletLive, :home
+    end
   end
 
   scope "/api", MiniappWeb do

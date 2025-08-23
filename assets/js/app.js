@@ -26,8 +26,9 @@ import {hooks as colocatedHooks} from "phoenix-colocated/miniapp"
 import topbar from "../vendor/topbar"
 import Hooks from "./hooks"
 
+let socketUrl = window.location.pathname.startsWith("/embed/") ? "/embed/live" : "/live"
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-const liveSocket = new LiveSocket("/live", Socket, {
+const liveSocket = new LiveSocket(socketUrl, Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
   hooks: {...Hooks, ...colocatedHooks},

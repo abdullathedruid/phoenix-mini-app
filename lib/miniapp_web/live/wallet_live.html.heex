@@ -1,0 +1,35 @@
+<Layouts.flash_group flash={@flash} />
+<div class="px-4 py-4 min-h-screen grid grid-rows-[auto,1fr,auto] max-w-md mx-auto">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="badge badge-outline">Base</span>
+    </div>
+    <Layouts.theme_toggle />
+  </div>
+
+  <div class="flex flex-col items-center justify-center text-center gap-6">
+    <div class="relative w-40 h-40">
+      <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-secondary opacity-20 blur-2xl"></div>
+      <div class="relative w-full h-full rounded-2xl bg-base-200 flex items-center justify-center shadow-lg">
+        <span class="text-6xl">✨</span>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <h1 class="text-2xl font-extrabold tracking-tight">Wallet</h1>
+      <p class="text-base-content/70">Connect your wallet to get started.</p>
+    </div>
+
+    <div class="w-full flex flex-col gap-3">
+      <div id="minikit-hook" phx-hook="MinikitHook" />
+      <a href="#" class="btn btn-primary w-full">LFG</a>
+      <a href="#" class="btn btn-outline w-full">Learn more</a>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-center gap-2 py-4 text-xs text-base-content/60">
+    <span>Built with Phoenix</span>
+    <span>•</span>
+    <span>v{Application.spec(:miniapp, :vsn)}</span>
+  </div>
+</div>
