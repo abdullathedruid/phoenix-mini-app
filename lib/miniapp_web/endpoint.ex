@@ -11,6 +11,8 @@ defmodule MiniappWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  plug PromEx.Plug, prom_ex_module: Miniapp.PromEx
+
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]

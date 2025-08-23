@@ -55,10 +55,15 @@ config :tailwind,
 # Configures Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id, :span_id, :trace_id]
+  metadata: [:request_id, :file, :line, :span_id, :trace_id]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# PromEx
+config :miniapp, Miniapp.PromEx,
+  manual_metrics_start_delay: :no_delay,
+  drop_metrics_groups: []
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

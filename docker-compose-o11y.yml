@@ -30,12 +30,28 @@ services:
       - internal
     volumes:
       - ./volumes/loki:/var/lib/loki
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/var/lib/prometheus/data
+    ports:
+      - 9090:9090
+    networks:
+      - internal
+    volumes:
+      - ./docker/prometheus:/etc/prometheus
+      - ./volumes/prometheus:/var/lib/prometheus/data
+    restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
+    environment:
+      - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
     ports:
       - 3000:3000
     networks:
       - internal
     volumes:
       - ./volumes/grafana:/var/lib/grafana
+      - ./docker/grafana:/etc/grafana/provisioning
     restart: unless-stopped

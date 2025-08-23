@@ -12,6 +12,7 @@ defmodule Miniapp.Application do
     OpentelemetryEcto.setup([:miniapp, :repo])
 
     children = [
+      Miniapp.PromEx,
       MiniappWeb.Telemetry,
       Miniapp.Repo,
       {DNSCluster, query: Application.get_env(:miniapp, :dns_cluster_query) || :ignore},
