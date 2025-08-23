@@ -22,7 +22,11 @@ FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential git \
+  && apt-get install -y --no-install-recommends build-essential git curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
+  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends nodejs \
   && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
@@ -46,7 +50,7 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-RUN mix assets.setup
+# Install asset tooling and dependencies after assets are present
 
 COPY priv priv
 
@@ -58,6 +62,8 @@ RUN mix compile
 COPY assets assets
 
 # compile assets
+RUN npm ci --prefix ./assets --no-audit --no-fund
+RUN mix assets.setup
 RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
