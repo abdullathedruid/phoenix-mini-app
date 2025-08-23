@@ -76,7 +76,7 @@ if config_env() == :prod do
   config :opentelemetry_exporter,
     otlp_protocol: :http_protobuf,
     otlp_endpoint:
-      System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://otel-lgtm:4318"
+      System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") || "http://alloy:4318"
 
   # ## SSL Support
   #

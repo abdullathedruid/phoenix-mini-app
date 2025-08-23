@@ -13,12 +13,6 @@ services:
     volumes:
       - ./volumes/alloy:/var/lib/alloy/data
       - ./docker/alloy/config.alloy:/etc/alloy/config.alloy
-      - /:/rootfs:ro
-      - /run:/run:ro
-      - /var/log:/var/log:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker/:ro
-      - /run/udev/data:/run/udev/data:ro
     restart: unless-stopped
   loki:
     image: grafana/loki:latest
@@ -43,10 +37,24 @@ services:
       - ./docker/prometheus:/etc/prometheus
       - ./volumes/prometheus:/var/lib/prometheus/data
     restart: unless-stopped
+  tempo:
+    image: grafana/tempo:latest
+    command:
+      - --config.file=/etc/tempo/tempo.yml
+    ports:
+      - 3200:3200
+      - 4317:4317
+    networks:
+      - internal
+    volumes:
+      - ./docker/tempo:/etc/tempo
+      - ./volumes/tempo:/var/lib/tempo
+    restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
     environment:
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
+      - TEMPO_URL=${TEMPO_URL:-http://tempo:3200}
     ports:
       - 3000:3000
     networks:
@@ -55,3 +63,5 @@ services:
       - ./volumes/grafana:/var/lib/grafana
       - ./docker/grafana:/etc/grafana/provisioning
     restart: unless-stopped
+networks:
+  internal:
