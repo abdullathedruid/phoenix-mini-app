@@ -25,6 +25,9 @@ services:
       - db
     networks:
       - internal
+      - dokploy-network
 
 networks:
   internal:
+  dokploy-network:
+    external: true

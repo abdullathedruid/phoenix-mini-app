@@ -7,7 +7,7 @@ services:
     ports:
       - 3100:3100
     networks:
-      - internal
+      - dokploy-network
     volumes:
       - ${DATA_DIR:-./volumes}/loki:/var/lib/loki
   prometheus:
@@ -19,7 +19,7 @@ services:
     ports:
       - 9090:9090
     networks:
-      - internal
+      - dokploy-network
     volumes:
       - ./docker/prometheus:/etc/prometheus
       - ${DATA_DIR:-./volumes}/prometheus:/var/lib/prometheus/data
@@ -33,7 +33,7 @@ services:
       - 3200:3200
       - 4317:4317
     networks:
-      - internal
+      - dokploy-network
     volumes:
       - ./docker/tempo:/etc/tempo
       - ${DATA_DIR:-./volumes}/tempo:/var/lib/tempo
@@ -48,7 +48,6 @@ services:
     ports:
       - 3001:3000
     networks:
-      - internal
       - dokploy-network
     volumes:
       - ${DATA_DIR:-./volumes}/grafana:/var/lib/grafana
@@ -58,13 +57,12 @@ services:
     image: grafana/promtail:latest
     command: -config.file=/etc/promtail/config.yml
     networks:
-      - internal
+      - dokploy-network
     volumes:
       - ./docker/promtail/config.yml:/etc/promtail/config.yml:ro
       - ${DATA_DIR:-./volumes}/promtail:/var/lib/promtail
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 networks:
-  internal:
   dokploy-network:
     external: true
