@@ -45,7 +45,7 @@ RUN set -e; \
     FULL_SHA=$(cat .git/HEAD); \
   fi; \
   SHORT_SHA=$(echo "$FULL_SHA" | head -c12); \
-  AUTHOR=$(awk '{a=$0} END{print a}' .git/logs/HEAD | awk -F">" '{print $1}' | awk -F"<" '{print $1}' | xargs); \
+  AUTHOR=$(awk '{a=$0} END{print a}' .git/logs/HEAD | awk -F" " '{print $3}'); \
   echo -n "$SHORT_SHA" > /git_sha; \
   echo -n "$AUTHOR" > /git_author
 
