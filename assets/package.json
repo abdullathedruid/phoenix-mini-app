@@ -1,0 +1,25 @@
+{
+  "name": "assets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "esbuild js/app.js --bundle --minify --sourcemap --outdir=../priv/static/assets",
+    "watch": "esbuild js/app.js --bundle --sourcemap --outdir=../priv/static/assets --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@coinbase/onchainkit": "^0.38.19",
+    "phoenix": "../deps/phoenix",
+    "phoenix_html": "../deps/phoenix_html",
+    "phoenix_live_view": "../deps/phoenix_live_view",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react-dom": "^19.1.7",
+    "esbuild": "^0.25.9"
+  }
+}
