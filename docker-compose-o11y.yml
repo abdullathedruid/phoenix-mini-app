@@ -1,0 +1,41 @@
+services:
+  alloy:
+    image: grafana/alloy:latest
+    command: 
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - 12345:12345
+    networks:
+      - internal
+    volumes:
+      - ./volumes/alloy:/var/lib/alloy/data
+      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy
+      - /:/rootfs:ro
+      - /run:/run:ro
+      - /var/log:/var/log:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker/:ro
+      - /run/udev/data:/run/udev/data:ro
+    restart: unless-stopped
+  loki:
+    image: grafana/loki:latest
+    command:
+      -config.file=/etc/loki/local-config.yaml
+    ports:
+      - 3100:3100
+    networks:
+      - internal
+    volumes:
+      - ./volumes/loki:/var/lib/loki
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    networks:
+      - internal
+    volumes:
+      - ./volumes/grafana:/var/lib/grafana
+    restart: unless-stopped
