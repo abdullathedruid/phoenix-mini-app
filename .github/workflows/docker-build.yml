@@ -50,6 +50,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          cache-from: type=gha,scope=phoenix-mini-app
+          cache-to: type=gha,scope=phoenix-mini-app,mode=max
           tags: |
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_latest }}
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_sha }}
