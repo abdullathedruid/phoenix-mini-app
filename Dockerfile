@@ -17,6 +17,8 @@ ARG DEBIAN_VERSION=bookworm-20250811-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
+ARG GIT_SHA
+ARG GIT_AUTHOR
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -69,6 +71,8 @@ RUN mix release
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE} AS final
+ARG GIT_SHA
+ARG GIT_AUTHOR
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses5 locales ca-certificates \
@@ -81,6 +85,9 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
+
+ENV GIT_SHA=$GIT_SHA
+ENV GIT_AUTHOR=$GIT_AUTHOR
 
 WORKDIR "/app"
 RUN chown nobody /app
