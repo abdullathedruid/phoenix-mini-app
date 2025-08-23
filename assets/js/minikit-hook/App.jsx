@@ -32,7 +32,5 @@ export default function App({ pushEvent }) {
     }
   }, [context])
 
-  return <div>
-    <button onClick={() => pushEvent("wallet:connect")}>Connect Wallet</button>
-  </div>
+  return <div></div>
 }
