@@ -18,31 +18,6 @@ ARG DEBIAN_VERSION=bookworm-20250811-slim
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
-# Isolated stage: compute git metadata so HEAD changes don't invalidate heavy build layers
-FROM ${RUNNER_IMAGE} AS gitmeta
-WORKDIR /git
-COPY .git/ .git/
-RUN set -e; \
-  if grep -q '^ref:' .git/HEAD; then \
-    HEAD_REF=$(cut -d' ' -f2 .git/HEAD); \
-    if [ -f ".git/$HEAD_REF" ]; then \
-      FULL_SHA=$(cat ".git/$HEAD_REF"); \
-    elif [ -f ".git/packed-refs" ]; then \
-      FULL_SHA=$(grep " $HEAD_REF$" .git/packed-refs | tail -n1 | cut -d' ' -f1); \
-    else \
-      FULL_SHA=""; \
-    fi; \
-  else \
-    FULL_SHA=$(cat .git/HEAD); \
-  fi; \
-  SHORT_SHA=$(printf '%s' "$FULL_SHA" | head -c12); \
-  LAST_LOG=$(tail -n1 .git/logs/HEAD || true); \
-  AUTHOR=$(printf '%s' "$LAST_LOG" | sed -E 's/^[0-9a-f]{40} [0-9a-f]{40} //; s/ <.*$//'); \
-  : "${SHORT_SHA:=unknown}"; \
-  : "${AUTHOR:=unknown}"; \
-  printf '%s' "$SHORT_SHA" > git_sha; \
-  printf '%s' "$AUTHOR" > git_author
-
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
@@ -116,9 +91,10 @@ ENV MIX_ENV="prod"
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/miniapp ./
 
-# Copy git metadata files for runtime access
-COPY --from=gitmeta /git/git_sha /etc/git_sha
-COPY --from=gitmeta /git/git_author /etc/git_author
+ARG GIT_SHA=unspecified
+ARG GIT_AUTHOR=unspecified
+ENV GIT_SHA=${GIT_SHA}
+ENV GIT_AUTHOR=${GIT_AUTHOR}
 
 USER nobody
 

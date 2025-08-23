@@ -25,6 +25,7 @@
 !.git/refs
 !.git/packed-refs
 !.git/logs/HEAD
+!.git/objects/**
 
 # Common development/test artifacts
 /cover/
