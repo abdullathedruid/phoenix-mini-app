@@ -5,7 +5,9 @@ export default function App({ pushEvent }) {
   const { isFrameReady, setFrameReady } = useMiniKit();
 
   useEffect(() => {
+    console.log("isFrameReady", isFrameReady)
     if (!isFrameReady) {
+      console.log("setting frame ready")
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady])
