@@ -56,8 +56,8 @@ jobs:
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_latest }}
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_sha }}
           build-args: |
-            GIT_SHA="${{ steps.meta.outputs.git_sha }}"
-            GIT_AUTHOR="${{ steps.meta.outputs.git_author }}"
+            GIT_SHA=${{ steps.meta.outputs.git_sha }}
+            GIT_AUTHOR=${{ steps.meta.outputs.git_author }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
