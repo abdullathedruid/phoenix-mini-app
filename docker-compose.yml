@@ -21,27 +21,19 @@ services:
       - PHX_HOST=${PHX_HOST:-localhost}
     depends_on:
       - db
-      - otel-collector
+      - otel-lgtm
     networks:
       - internal
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    command: ["--config", "/conf/otel-collector-config.yml"]
+  otel-lgtm:
+    image: grafana/otel-lgtm
     ports:
+      - 3000:3000
       - 4317:4317
       - 4318:4318
     networks:
       - internal
     volumes:
-      - ./docker/otel-collector/otel-collector-config.yml:/conf/otel-collector-config.yml
-    links:
-      - jaeger-all-in-one
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - 16686:16686
-    networks:
-      - internal
+      - ./volumes/otel-lgtm:/data
 
 networks:
   internal:

@@ -7,7 +7,7 @@ defmodule Miniapp.Application do
 
   @impl true
   def start(_type, _args) do
-    OpentelemetryBandit.setup()
+    OpentelemetryLoggerMetadata.setup()
     OpentelemetryPhoenix.setup(adapter: :bandit)
     OpentelemetryEcto.setup([:miniapp, :repo])
 
