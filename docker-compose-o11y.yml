@@ -8,7 +8,7 @@ services:
     networks:
       - internal
     volumes:
-      - ./volumes/loki:/var/lib/loki
+      - ${DATA_DIR:-./volumes}/loki:/var/lib/loki
   prometheus:
     image: prom/prometheus:latest
     command:
@@ -20,7 +20,7 @@ services:
       - internal
     volumes:
       - ./docker/prometheus:/etc/prometheus
-      - ./volumes/prometheus:/var/lib/prometheus/data
+      - ${DATA_DIR:-./volumes}/prometheus:/var/lib/prometheus/data
     restart: unless-stopped
   tempo:
     image: grafana/tempo:latest
@@ -33,7 +33,7 @@ services:
       - internal
     volumes:
       - ./docker/tempo:/etc/tempo
-      - ./volumes/tempo:/var/lib/tempo
+      - ${DATA_DIR:-./volumes}/tempo:/var/lib/tempo
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
@@ -47,7 +47,7 @@ services:
       - internal
       - dokploy-network
     volumes:
-      - ./volumes/grafana:/var/lib/grafana
+      - ${DATA_DIR:-./volumes}/grafana:/var/lib/grafana
       - ./docker/grafana:/etc/grafana/provisioning
     restart: unless-stopped
   promtail:
@@ -57,7 +57,7 @@ services:
       - internal
     volumes:
       - ./docker/promtail/config.yml:/etc/promtail/config.yml:ro
-      - ./volumes/promtail:/var/lib/promtail
+      - ${DATA_DIR:-./volumes}/promtail:/var/lib/promtail
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 networks:
