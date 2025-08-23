@@ -6,8 +6,3 @@ datasources:
     access: proxy
     url: $PROMETHEUS_URL
     editable: true
-  - name: tempo
-    type: tempo
-    access: proxy
-    url: $TEMPO_URL
-    editable: true
