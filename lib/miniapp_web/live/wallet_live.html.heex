@@ -30,10 +30,9 @@
 
     <div class="w-full flex flex-col gap-3">
       <div id="minikit-hook" phx-hook="MinikitHook" />
-      <%= if @accounts do %>
-        <%= for account <- @accounts do %>
-          <a href="#" class="btn btn-primary w-full">LFG {account}</a>
-        <% end %>
+      <button class="btn btn-secondary w-full" phx-click="request:get_account">Request Account (client)</button>
+      <%= if @connected_address do %>
+        <a href="#" class="btn btn-primary w-full">LFG {String.slice(@connected_address, 0, 6)}...{String.slice(@connected_address, -4, 4)}</a>
       <% end %>
     </div>
   </div>

@@ -14,7 +14,7 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:user_display_name, nil)
      |> assign(:user_pfp_url, nil)
      |> assign(:latest_block, nil)
-     |> assign(:accounts, [])}
+     |> assign(:connected_address, nil)}
   end
 
   @impl true
@@ -34,16 +34,38 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_event(event, unsigned_params, socket) do
-    Logger.warning("Unhandled event: #{event} with params: #{inspect(unsigned_params)}")
-    {:noreply, socket
-    |> push_event("hello", %{message: "hello"})
-  }
+  def handle_event("request:get_account", _params, socket) do
+    {:noreply, push_event(socket, "client:request", %{action: "get_account", params: %{}})}
   end
 
   @impl true
-  def handle_event("miniapp:accounts", %{"accounts" => accounts}, socket) do
-    {:noreply, assign(socket, :accounts, accounts)}
+  def handle_event("client:response", %{"action" => "get_account", "ok" => true, "result" => %{"address" => address}}, socket) do
+    # We got an account so we can assign it to the socket
+    {:noreply, assign(socket, :connected_address, address)}
+  end
+
+  @impl true
+  def handle_event("client:response", %{"action" => "get_account", "ok" => true, "result" => result}, socket) when result == %{} do
+    # No address found, try to connect
+    {:noreply, socket |> push_event("client:request", %{action: "connect_account"})}
+  end
+
+  @impl true
+  def handle_event("client:response", %{"action" => "connect_account", "ok" => true}, socket) do
+    # We connected so now we can get the account
+    {:noreply, socket |> push_event("client:request", %{action: "get_account"})}
+  end
+
+  @impl true
+  def handle_event("client:response", %{"action" => action, "ok" => false, "error" => error}, socket) do
+    Logger.error("Client action #{action} failed: #{inspect(error)}")
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(event, unsigned_params, socket) do
+    Logger.warning("Unhandled event: #{event} with params: #{inspect(unsigned_params)}")
+    {:noreply, socket}
   end
 
   @impl true
