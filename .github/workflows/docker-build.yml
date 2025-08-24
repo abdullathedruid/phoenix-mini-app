@@ -4,6 +4,10 @@ on:
   push:
     branches: [ "main" ]
 
+concurrency:
+  group: docker-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write
@@ -11,6 +15,8 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  BUILDKIT_PROGRESS: plain
+  DOCKER_BUILDKIT: 1
 
 jobs:
   build:
@@ -21,6 +27,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+            image=moby/buildkit:buildx-stable-1
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -50,12 +60,18 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          cache-from: type=gha,scope=phoenix-mini-app
-          cache-to: type=gha,scope=phoenix-mini-app,mode=max
+          platforms: linux/amd64
+          cache-from: |
+            type=gha,scope=phoenix-mini-app
+            type=registry,ref=${{ steps.meta.outputs.image }}:cache
+          cache-to: |
+            type=gha,scope=phoenix-mini-app,mode=max
+            type=registry,ref=${{ steps.meta.outputs.image }}:cache,mode=max
           tags: |
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_latest }}
             ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag_sha }}
           build-args: |
+            BUILDKIT_INLINE_CACHE=1
             GIT_SHA=${{ steps.meta.outputs.git_sha }}
             GIT_AUTHOR=${{ steps.meta.outputs.git_author }}
           labels: |
