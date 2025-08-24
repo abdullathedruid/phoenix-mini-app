@@ -17,7 +17,7 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_event("wallet:connect", %{"context" => context}, socket) do
+  def handle_event("miniapp:connect", %{"context" => context}, socket) do
     %{"user" => %{"fid" => user_fid} = user,
     "client" => %{"clientFid" => client_fid},
     } = context
