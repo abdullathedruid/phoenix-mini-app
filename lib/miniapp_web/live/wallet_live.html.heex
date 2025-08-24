@@ -35,8 +35,8 @@
   </div>
 
   <div class="flex items-center justify-center gap-2 py-4 text-xs text-base-content/60">
-    <span>Built with Phoenix</span>
-    <span>•</span>
-    <span>v{Application.spec(:miniapp, :vsn)}</span>
+    <%= if @latest_block do %>
+      <span>Latest block: <%= @latest_block %></span>
+    <% end %>
   </div>
 </div>

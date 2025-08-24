@@ -17,6 +17,7 @@ defmodule Miniapp.Application do
       Miniapp.Repo,
       {DNSCluster, query: Application.get_env(:miniapp, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Miniapp.PubSub},
+      Miniapp.Chain.Supervisor,
       # Start a worker by calling: Miniapp.Worker.start_link(arg)
       # {Miniapp.Worker, arg},
       # Start to serve requests, typically the last entry

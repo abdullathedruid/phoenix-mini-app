@@ -136,3 +136,7 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+# Blockchain WS endpoint in runtime (prod or others)
+config :miniapp, Miniapp.Chain,
+  ws_url: System.get_env("CHAIN_WS_URL")

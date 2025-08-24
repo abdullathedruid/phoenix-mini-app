@@ -89,3 +89,7 @@ config :swoosh, :api_client, false
 
 # Disable opentelemetry in development
 config :opentelemetry, :processors, nil
+
+# Blockchain WS endpoint (e.g., local geth, anvil, or public RPC with WS)
+config :miniapp, Miniapp.Chain,
+  ws_url: System.get_env("CHAIN_WS_URL") || "ws://localhost:8546"

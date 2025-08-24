@@ -79,7 +79,8 @@ defmodule Miniapp.MixProject do
       {:opentelemetry_phoenix, "~> 2.0"},
       {:opentelemetry_ecto, "~> 1.2"},
       {:opentelemetry_logger_metadata, "~> 0.2"},
-      {:prom_ex, "~> 1.11"}
+      {:prom_ex, "~> 1.11"},
+      {:websockex, "~> 0.4.3"}
     ]
   end
 
