@@ -84,23 +84,10 @@ defmodule MiniappWeb.WalletLive do
         %{"action" => "get_capabilities", "ok" => true, "result" => capabilities},
         socket
       ) do
-    base_capabilities = Map.get(capabilities, "8453", %{})
+    parsed_capabilities = Miniapp.Wallet.Capabilities.parse(capabilities)
 
-    atomic_status =
-      case get_in(base_capabilities, ["atomic", "status"]) do
-        "supported" -> :supported
-        "ready" -> :ready
-        _ -> :unsupported
-      end
-
-    new_caps = %{
-      atomic_status: atomic_status,
-      auxiliary_funds: get_in(base_capabilities, ["auxiliaryFunds", "supported"]) in [true, "true"],
-      paymaster_service: get_in(base_capabilities, ["paymasterService", "supported"]) in [true, "true"]
-    }
-
-    Logger.info("get_capabilities completed with capabilities: #{inspect(new_caps)}")
-    {:noreply, socket |> assign(:capabilities, new_caps)}
+    Logger.info("get_capabilities completed with capabilities: #{inspect(parsed_capabilities)}")
+    {:noreply, socket |> assign(:capabilities, parsed_capabilities)}
   end
 
   @impl true
@@ -110,7 +97,7 @@ defmodule MiniappWeb.WalletLive do
         socket
       ) do
     case socket.assigns[:connected_address] do
-      nil -> 
+      nil ->
         Logger.info("send_calls completed with id: #{id}")
       wallet_address ->
         Logger.info("Calls sent successfully - ID: #{id}, Wallet: #{wallet_address}")
