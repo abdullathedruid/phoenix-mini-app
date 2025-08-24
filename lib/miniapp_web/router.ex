@@ -32,7 +32,7 @@ defmodule MiniappWeb.Router do
   scope "/embed", MiniappWeb do
     pipe_through :embedded
 
-    live_session :embedded, layout: {MiniappWeb.Layouts, :root} do
+    live_session :embedded do
       live "/wallet", WalletLive, :home
     end
   end
