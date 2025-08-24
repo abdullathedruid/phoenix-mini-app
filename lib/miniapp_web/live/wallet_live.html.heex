@@ -4,9 +4,9 @@
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-4">
       <%= if @user_pfp_url do %>
-        <img src={@user_pfp_url} alt={@user_display_name} class="w-10 h-10 rounded-full" />
+        <img src={@user_pfp_url} alt={@user_display_name} class={"w-10 h-10 rounded-full ring-2 #{if @connected_address, do: "ring-green-500", else: "ring-red-500"}"} />
       <% else %>
-        <div class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center">
+        <div class={"w-10 h-10 rounded-full bg-base-200 flex items-center justify-center ring-2 #{if @connected_address, do: "ring-green-500", else: "ring-red-500"}"}>
           <span class="text-base-content/70">{@user_fid}</span>
         </div>
       <% end %>
@@ -31,9 +31,7 @@
 
     <div class="w-full flex flex-col gap-3">
       <%= if @connected_address do %>
-        <a href="#" class="btn btn-primary w-full">
-          LFG {String.slice(@connected_address, 0, 6)}...{String.slice(@connected_address, -4, 4)}
-        </a>
+        <a href="#" class="btn btn-primary w-full">LFG</a>
       <% end %>
     </div>
   </div>
