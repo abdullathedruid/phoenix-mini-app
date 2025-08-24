@@ -1,4 +1,4 @@
-import { connect, getAccount } from "@wagmi/core";
+import { connect, getAccount, sendCalls, getCapabilities } from "@wagmi/core";
 
 // Default action handlers. Extend this object with new client-side actions.
 export const actionHandlers = {
@@ -7,8 +7,17 @@ export const actionHandlers = {
     return { address };
   },
   async connect_account({ config }) {
-    const { address } = await connect(config, { connector: config.connectors[0] });
-    return { address };
+    const { accounts } = await connect(config, { connector: config.connectors[0] });
+    return { accounts };
+  },
+  async send_calls({ config, params }) {
+    const calls = params?.calls || [];
+    const { id } = await sendCalls(config, { calls });
+    return { id };
+  },
+  async get_capabilities({ config }) {
+    const capabilities = await getCapabilities(config);
+    return capabilities;
   },
 };
 

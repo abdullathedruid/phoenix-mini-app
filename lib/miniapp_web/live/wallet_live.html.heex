@@ -31,7 +31,8 @@
 
     <div class="w-full flex flex-col gap-3">
       <%= if @connected_address do %>
-        <a href="#" class="btn btn-primary w-full">LFG</a>
+        <button class="btn btn-secondary w-full" phx-click="get_capabilities">Get Capabilities</button>
+        <button class="btn btn-secondary w-full" phx-click="test_transaction">Test Transaction</button>
       <% end %>
     </div>
   </div>

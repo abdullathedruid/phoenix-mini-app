@@ -34,6 +34,64 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
+  def handle_event("get_capabilities", _params, %{assigns: %{connected_address: nil}} = socket) do
+    {:noreply, socket |> put_flash(:error, "Please connect your wallet to continue")}
+  end
+
+  @impl true
+  def handle_event("get_capabilities", _params, %{assigns: %{connected_address: connected_address}} = socket) do
+    {:noreply, socket |> push_event("client:request", %{action: "get_capabilities"})}
+  end
+
+  @impl true
+  def handle_event("test_transaction", _params, %{assigns: %{connected_address: nil}} = socket) do
+    # If not connected, prompt client to connect first
+      {:noreply, socket |> push_event("client:request", %{action: "connect_account"})}
+  end
+
+  @impl true
+  def handle_event("test_transaction", _params, %{assigns: %{connected_address: connected_address}} = socket) do
+      calls = [
+        %{"to" => connected_address}
+      ]
+
+      {:noreply,
+       socket
+       |> push_event("client:request", %{action: "send_calls", params: %{"calls" => calls}})}
+    end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "get_capabilities", "ok" => true, "result" => capabilities},
+        socket
+      ) do
+    Logger.info("get_capabilities completed with capabilities: #{inspect(capabilities)}")
+    {:noreply, socket |> put_flash(:info, "Capabilities: #{inspect(capabilities)}")}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "send_calls", "ok" => true, "result" => %{"id" => id}},
+        socket
+      ) do
+    Logger.info("send_calls completed with id: #{id}")
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "send_calls", "ok" => false, "error" => error},
+        socket
+      ) do
+    # TODO: handle error - maybe the user rejected the transaction
+    Logger.error("send_calls failed: #{inspect(error)}")
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event(
         "client:response",
         %{"action" => "get_account", "ok" => true, "result" => %{"address" => address}},
@@ -55,9 +113,9 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_event("client:response", %{"action" => "connect_account", "ok" => true}, socket) do
+  def handle_event("client:response", %{"action" => "connect_account", "ok" => true, "result" => %{"accounts" => [address | _]}}, socket) do
     # We connected so now we can get the account
-    {:noreply, socket |> push_event("client:request", %{action: "get_account"})}
+    {:noreply, socket |> assign(:connected_address, address)}
   end
 
   @impl true
