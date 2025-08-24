@@ -7,6 +7,7 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   """
 
   import Plug.Conn
+  require Logger
 
   @behaviour Plug
 
@@ -18,12 +19,27 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
 
   @impl true
   def call(conn, _opts) do
-    with [token] <- Map.get(conn.params, "token", []),
-         {:ok, claims} <- verify_token(token),
-         :ok <- maybe_verify_sender(conn, claims) do
-      assign(conn, :paymaster_claims, claims)
-    else
-      _ ->
+    result =
+      with [token] <- Map.get(conn.params, "token", []),
+           {:ok, claims} <- verify_token(token),
+           :ok <- maybe_verify_sender(conn, claims) do
+        {:ok, claims}
+      else
+        [] -> {:error, :missing_token}
+        {:error, reason} -> {:error, reason}
+        :error -> {:error, :sender_mismatch}
+        other -> {:error, other}
+      end
+
+    case result do
+      {:ok, claims} -> assign(conn, :paymaster_claims, claims)
+      {:error, reason} ->
+        Logger.warning("paymaster auth failed",
+          reason: inspect(reason),
+          path: conn.request_path,
+          method: conn.method
+        )
+
         conn
         |> send_resp(401, "unauthorized")
         |> halt()
@@ -39,12 +55,16 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   end
 
   # Verify that the request body has the expected sender at params[0].sender
-  defp maybe_verify_sender(%{body_params: body}, %{"sender" => expected}) when is_map(body) do
+  defp maybe_verify_sender(%{body_params: body} = _conn, %{"sender" => expected}) when is_map(body) do
     actual = get_in(body, ["params", 0, "sender"])
     expected_norm = normalize_address(expected)
     actual_norm = normalize_address(actual)
 
-    if is_binary(actual_norm) and actual_norm == expected_norm, do: :ok, else: :error
+    cond do
+      is_nil(actual_norm) -> {:error, :sender_missing}
+      actual_norm == expected_norm -> :ok
+      true -> {:error, {:sender_mismatch, %{expected: expected_norm, actual: actual_norm}}}
+    end
   end
 
   defp maybe_verify_sender(_conn, _claims), do: :error
