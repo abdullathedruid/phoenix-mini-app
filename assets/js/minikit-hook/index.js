@@ -1,15 +1,15 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { http, createConfig } from "@wagmi/core";
-import { baseSepolia } from "@wagmi/core/chains";
+import { base } from "@wagmi/core/chains";
 import { farcasterMiniApp as miniAppConnector } from "@farcaster/miniapp-wagmi-connector";
 import { createClientRequestHandler } from "./dispatcher";
 
 const config = createConfig({
   connectors: [miniAppConnector()],
   transports: {
-    [baseSepolia.id]: http(),
+    [base.id]: http(),
   },
-  chains: [baseSepolia],
+  chains: [base],
 });
 
 /**
