@@ -13,7 +13,8 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:user_fid, nil)
      |> assign(:user_display_name, nil)
      |> assign(:user_pfp_url, nil)
-     |> assign(:latest_block, nil)}
+     |> assign(:latest_block, nil)
+     |> assign(:accounts, [])}
   end
 
   @impl true
@@ -28,13 +29,21 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:user_fid, user_fid)
      |> assign(:user_display_name, user_display_name)
      |> assign(:user_pfp_url, user_pfp_url)
-     |> assign(:client_fid, client_fid)}
+     |> assign(:client_fid, client_fid)
+    }
   end
 
   @impl true
   def handle_event(event, unsigned_params, socket) do
     Logger.warning("Unhandled event: #{event} with params: #{inspect(unsigned_params)}")
-    {:noreply, socket}
+    {:noreply, socket
+    |> push_event("hello", %{message: "hello"})
+  }
+  end
+
+  @impl true
+  def handle_event("miniapp:accounts", %{"accounts" => accounts}, socket) do
+    {:noreply, assign(socket, :accounts, accounts)}
   end
 
   @impl true

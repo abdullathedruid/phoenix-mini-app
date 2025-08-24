@@ -1,17 +1,21 @@
 import { sdk } from "@farcaster/miniapp-sdk";
-import { createWalletClient, custom } from "viem";
-import { base } from "viem/chains";
+import { http, createConfig, getAccount } from "@wagmi/core";
+import { base } from "@wagmi/core/chains";
+import { farcasterMiniApp as miniAppConnector } from "@farcaster/miniapp-wagmi-connector";
 
-const walletClient = createWalletClient({
-  chain: base,
-  transport: custom(window.ethereum),
+const config = createConfig({
+  connectors: [miniAppConnector()],
+  transports: {
+    [base.id]: http(),
+  },
+  chains: [base],
 });
 
 /**
  * @type {import("phoenix_live_view").Hook}
  */
 const WalletHook = {
-  async mounted() {
+  async sendContextToServer() {
     try {
       await sdk.actions.ready();
       const context = await sdk.context;
@@ -19,31 +23,26 @@ const WalletHook = {
         this.pushEvent("miniapp:connect", { context });
       }
     } catch (error) {
-      console.error("MiniApp SDK initialization failed", error);
+      console.error("Failed to send context to server", error);
     }
+  },
+  async mounted() {
+    await this.sendContextToServer();
+
+    this.handleEvent("hello", (params) => {
+      console.log("hello", params);
+    });
 
     try {
-      const provider = await sdk.wallet.getEthereumProvider();
-      if (provider) {
-        this.pushEvent("miniapp:provider", { provider });
-      }
-    } catch (error) {
-      console.error("Failed to get Ethereum provider", error);
-    }
-
-    try {
-      const block = await window.publicClient.getBlockNumber();
-      this.pushEvent("miniapp:block", { blockNumber: block });
-    } catch (error) {
-      console.error("Failed to get block number", error);
-    }
-
-    try {
-      const account = await walletClient.getAddresses();
-      this.pushEvent("miniapp:account", { account: account[0] });
+      const { address } = getAccount(config);
+      this.pushEvent("miniapp:accounts", { address });
     } catch (error) {
       console.error("Failed to get account", error);
     }
-  }
+  },
+
+  async reconnected() {
+    await this.sendContextToServer();
+  },
 }
 export default WalletHook;

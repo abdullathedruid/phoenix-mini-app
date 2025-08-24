@@ -12,6 +12,9 @@
   "license": "ISC",
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.1.9",
+    "@farcaster/miniapp-wagmi-connector": "^1.0.0",
+    "@wagmi/connectors": "^5.9.5",
+    "@wagmi/core": "^2.20.0",
     "phoenix": "../deps/phoenix",
     "phoenix_html": "../deps/phoenix_html",
     "phoenix_live_view": "../deps/phoenix_live_view",
