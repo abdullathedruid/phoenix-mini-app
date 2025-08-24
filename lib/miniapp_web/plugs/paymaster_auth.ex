@@ -37,8 +37,7 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
         Logger.warning("paymaster auth failed #{inspect(payload)} #{inspect(conn.request_path)} #{inspect(conn.method)}")
 
         conn
-        |> put_resp_content_type("application/json")
-        |> send_resp(401, Jason.encode!(payload))
+        |> send_resp(401, "")
         |> halt()
     end
   end
