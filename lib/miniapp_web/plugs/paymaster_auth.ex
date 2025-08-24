@@ -20,24 +20,25 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   @impl true
   def call(conn, _opts) do
     result =
-      with [token] <- Map.get(conn.params, "token", []),
+      with {:ok, token} <- fetch_token(conn.params),
            {:ok, claims} <- verify_token(token),
            :ok <- maybe_verify_sender(conn, claims) do
         {:ok, claims}
       else
-        [] -> {:error, :missing_token}
         {:error, reason} -> {:error, reason}
-        :error -> {:error, :sender_mismatch}
         other -> {:error, other}
       end
 
     case result do
       {:ok, claims} -> assign(conn, :paymaster_claims, claims)
       {:error, reason} ->
-        Logger.warning("paymaster auth failed: #{inspect(reason)} #{inspect(conn.request_path)} #{inspect(conn.method)}")
+        payload = build_error_payload(conn, reason)
+
+        Logger.warning("paymaster auth failed #{inspect(payload)} #{inspect(conn.request_path)} #{inspect(conn.method)}")
 
         conn
-        |> send_resp(401, "unauthorized")
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(payload))
         |> halt()
     end
   end
@@ -67,4 +68,34 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
 
   defp normalize_address(value) when is_binary(value), do: String.downcase(value)
   defp normalize_address(_), do: nil
+
+  defp fetch_token(params) when is_map(params) do
+    case Map.get(params, "token") do
+      token when is_binary(token) and byte_size(token) > 0 -> {:ok, token}
+      [token] when is_binary(token) and byte_size(token) > 0 -> {:ok, token}
+      _ -> {:error, :missing_token}
+    end
+  end
+
+  defp build_error_payload(conn, reason) do
+    %{
+      "error" => "unauthorized",
+      "reason" => format_reason(reason),
+      "details" => reason_details(reason),
+      "path" => conn.request_path,
+      "method" => conn.method
+    }
+  end
+
+  defp format_reason(:missing_token), do: "missing_token"
+  defp format_reason(:sender_mismatch), do: "sender_mismatch"
+  defp format_reason(:sender_missing), do: "sender_missing"
+  defp format_reason(:invalid), do: "invalid_token"
+  defp format_reason(:expired), do: "expired_token"
+  defp format_reason({:sender_mismatch, _}), do: "sender_mismatch"
+  defp format_reason(other) when is_atom(other), do: Atom.to_string(other)
+  defp format_reason(other), do: inspect(other)
+
+  defp reason_details({:sender_mismatch, %{expected: e, actual: a}}), do: %{expected: e, actual: a}
+  defp reason_details(_), do: nil
 end
