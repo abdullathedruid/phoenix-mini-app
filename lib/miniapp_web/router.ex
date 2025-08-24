@@ -23,6 +23,10 @@ defmodule MiniappWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :paymaster_auth do
+    plug MiniappWeb.Plugs.PaymasterAuth
+  end
+
   scope "/", MiniappWeb do
     pipe_through :browser
 
@@ -41,7 +45,12 @@ defmodule MiniappWeb.Router do
     pipe_through :api
 
     get "/dice", DiceController, :roll
-    # Proxy to external paymaster
+  end
+
+  scope "/api", MiniappWeb do
+    pipe_through [:api, :paymaster_auth]
+
+    # Proxy to external paymaster (requires signed token)
     match :*, "/paymaster/*path", PaymasterProxyController, :proxy
   end
 

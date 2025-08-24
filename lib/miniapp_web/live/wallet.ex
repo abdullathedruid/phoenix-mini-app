@@ -73,7 +73,7 @@ defmodule MiniappWeb.WalletLive do
      socket
      |> push_event("client:request", %{action: "send_calls", params: %{
         "calls" => calls,
-        "capabilities" => %{"paymasterService" => %{"url" => paymaster_proxy_url()}}
+        "capabilities" => %{"paymasterService" => %{"url" => paymaster_proxy_url_with_token(socket)}}
       }})
     }
   end
@@ -188,5 +188,16 @@ defmodule MiniappWeb.WalletLive do
 
   defp paymaster_proxy_url do
     MiniappWeb.Endpoint.url() <> "/api/paymaster"
+  end
+
+  defp paymaster_proxy_url_with_token(socket) do
+    sender = socket.assigns[:connected_address]
+    claims = %{
+      "fid" => socket.assigns[:user_fid],
+      "ts" => System.system_time(:second),
+      "sender" => is_binary(sender) && String.downcase(sender)
+    }
+    token = MiniappWeb.Plugs.PaymasterAuth.sign_token(claims)
+    paymaster_proxy_url() <> "?token=" <> token
   end
 end
