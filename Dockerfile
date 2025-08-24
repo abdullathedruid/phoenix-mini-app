@@ -50,6 +50,11 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
+# Pre-install JS dependencies based on lockfiles to maximize Docker layer caching
+COPY assets/package.json assets/package-lock.json ./assets/
+RUN npm ci --prefix ./assets --no-audit --no-fund
+RUN mix assets.setup
+
 # Install asset tooling and dependencies after assets are present
 
 COPY priv priv
@@ -62,8 +67,6 @@ RUN mix compile
 COPY assets assets
 
 # compile assets
-RUN npm ci --prefix ./assets --no-audit --no-fund
-RUN mix assets.setup
 RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
