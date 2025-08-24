@@ -11,9 +11,8 @@ export const actionHandlers = {
     return { accounts };
   },
   async send_calls({ config, params }) {
-    const calls = params?.calls || [];
-    const { id } = await sendCalls(config, { calls });
-    return { id };
+    const response = await sendCalls(config, params);
+    return { response };
   },
   async get_capabilities({ config }) {
     const capabilities = await getCapabilities(config);

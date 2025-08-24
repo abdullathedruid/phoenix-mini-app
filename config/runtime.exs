@@ -140,3 +140,7 @@ end
 
 # Blockchain WS endpoint in runtime (prod or others)
 config :miniapp, Miniapp.Chain, ws_url: System.get_env("CHAIN_WS_URL")
+
+# Paymaster proxy upstream config
+config :miniapp, MiniappWeb.PaymasterProxyController,
+  url: System.get_env("PAYMASTER_URL")

@@ -25,8 +25,6 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/miniapp"
 import topbar from "../vendor/topbar"
 import Hooks from "./hooks"
-import { createPublicClient, http } from "viem"
-import { base } from "viem/chains"
 
 let socketUrl = window.location.pathname.startsWith("/embed/") ? "/embed/live" : "/live"
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -49,13 +47,6 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-
-// Initialize a viem public client (Base mainnet) and expose it globally
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http()
-})
-window.publicClient = publicClient
 
 // The lines below enable quality of life phoenix_live_reload
 // development features:

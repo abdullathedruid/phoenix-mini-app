@@ -41,6 +41,8 @@ defmodule MiniappWeb.Router do
     pipe_through :api
 
     get "/dice", DiceController, :roll
+    # Proxy to external paymaster
+    match :*, "/paymaster/*path", PaymasterProxyController, :proxy
   end
 
   # Other scopes may use custom stacks.

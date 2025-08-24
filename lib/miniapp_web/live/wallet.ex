@@ -71,7 +71,11 @@ defmodule MiniappWeb.WalletLive do
 
     {:noreply,
      socket
-     |> push_event("client:request", %{action: "send_calls", params: %{"calls" => calls}})}
+     |> push_event("client:request", %{action: "send_calls", params: %{
+        "calls" => calls,
+        "capabilities" => %{"paymasterService" => %{"url" => paymaster_proxy_url()}}
+      }})
+    }
   end
 
   @impl true
@@ -180,5 +184,9 @@ defmodule MiniappWeb.WalletLive do
   @impl true
   def handle_info({:new_block, block_number}, socket) when is_integer(block_number) do
     {:noreply, assign(socket, :latest_block, block_number)}
+  end
+
+  defp paymaster_proxy_url do
+    MiniappWeb.Endpoint.url() <> "/api/paymaster"
   end
 end

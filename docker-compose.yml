@@ -25,6 +25,7 @@ services:
       - GIT_SHA=${GIT_SHA:-unknown}
       - GIT_AUTHOR=${GIT_AUTHOR:-unknown}
       - CHAIN_WS_URL=${CHAIN_WS_URL:-ws://localhost:8546}
+      - PAYMASTER_URL=${PAYMASTER_URL}
     depends_on:
       - db
     networks:
