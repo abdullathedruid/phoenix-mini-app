@@ -34,11 +34,7 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
     case result do
       {:ok, claims} -> assign(conn, :paymaster_claims, claims)
       {:error, reason} ->
-        Logger.warning("paymaster auth failed",
-          reason: inspect(reason),
-          path: conn.request_path,
-          method: conn.method
-        )
+        Logger.warning("paymaster auth failed: #{inspect(reason)} #{inspect(conn.request_path)} #{inspect(conn.method)}")
 
         conn
         |> send_resp(401, "unauthorized")
