@@ -48,7 +48,7 @@ defmodule MiniappWeb.WalletLive do
   def handle_event(
         "get_capabilities",
         _params,
-        %{assigns: %{connected_address: connected_address}} = socket
+        %{assigns: %{connected_address: _connected_address}} = socket
       ) do
     {:noreply, socket |> push_event("client:request", %{action: "get_capabilities"})}
   end
@@ -101,6 +101,21 @@ defmodule MiniappWeb.WalletLive do
 
     Logger.info("get_capabilities completed with capabilities: #{inspect(new_caps)}")
     {:noreply, socket |> assign(:capabilities, new_caps)}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "send_calls", "ok" => true, "result" => %{"response" => %{"id" => id}}},
+        socket
+      ) do
+    case socket.assigns[:connected_address] do
+      nil -> 
+        Logger.info("send_calls completed with id: #{id}")
+      wallet_address ->
+        Logger.info("Calls sent successfully - ID: #{id}, Wallet: #{wallet_address}")
+    end
+    {:noreply, socket}
   end
 
   @impl true
