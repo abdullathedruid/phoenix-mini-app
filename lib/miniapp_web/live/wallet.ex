@@ -127,7 +127,10 @@ defmodule MiniappWeb.WalletLive do
         socket
       ) do
     # We got an account so we can assign it to the socket
-    {:noreply, assign(socket, :connected_address, address)}
+    {:noreply,
+     socket
+     |> assign(:connected_address, address)
+     |> push_event("client:request", %{action: "get_capabilities"})}
   end
 
   @impl true
@@ -152,7 +155,10 @@ defmodule MiniappWeb.WalletLive do
         socket
       ) do
     # We connected so now we can get the account
-    {:noreply, socket |> assign(:connected_address, address)}
+    {:noreply,
+     socket
+     |> assign(:connected_address, address)
+     |> push_event("client:request", %{action: "get_capabilities"})}
   end
 
   @impl true
