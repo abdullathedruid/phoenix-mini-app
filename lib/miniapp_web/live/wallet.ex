@@ -16,8 +16,7 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:latest_block, nil)
      |> assign(:connected_address, nil)
      |> assign(:capabilities, %{
-       atomic: false,
-       atomic_batch: false,
+       atomic_status: :unsupported,
        auxiliary_funds: false,
        paymaster_service: false
      })}
@@ -83,20 +82,21 @@ defmodule MiniappWeb.WalletLive do
       ) do
     base_capabilities = Map.get(capabilities, "8453", %{})
 
-    keys = [
-      {"atomic", :atomic},
-      {"atomicBatch", :atomic_batch},
-      {"auxiliaryFunds", :auxiliary_funds},
-      {"paymasterService", :paymaster_service}
-    ]
+    atomic_status =
+      case get_in(base_capabilities, ["atomic", "status"]) do
+        "supported" -> :supported
+        "ready" -> :ready
+        _ -> :unsupported
+      end
 
-    caps =
-      Map.new(keys, fn {k, name} ->
-        {name, get_in(base_capabilities, [k, "supported"]) in [true, "true"]}
-      end)
+    new_caps = %{
+      atomic_status: atomic_status,
+      auxiliary_funds: get_in(base_capabilities, ["auxiliaryFunds", "supported"]) in [true, "true"],
+      paymaster_service: get_in(base_capabilities, ["paymasterService", "supported"]) in [true, "true"]
+    }
 
-    Logger.info("get_capabilities completed with capabilities: #{inspect(caps)}")
-    {:noreply, socket |> assign(:capabilities, caps)}
+    Logger.info("get_capabilities completed with capabilities: #{inspect(new_caps)}")
+    {:noreply, socket |> assign(:capabilities, new_caps)}
   end
 
   @impl true
