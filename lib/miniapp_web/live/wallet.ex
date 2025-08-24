@@ -14,7 +14,13 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:user_display_name, nil)
      |> assign(:user_pfp_url, nil)
      |> assign(:latest_block, nil)
-     |> assign(:connected_address, nil)}
+     |> assign(:connected_address, nil)
+     |> assign(:capabilities, %{
+       atomic: false,
+       atomic_batch: false,
+       auxiliary_funds: false,
+       paymaster_service: false
+     })}
   end
 
   @impl true
@@ -26,7 +32,8 @@ defmodule MiniappWeb.WalletLive do
 
     {:noreply,
      socket
-     |> push_event("client:request", %{action: "get_account"}) # only get the account if we're connected as a miniapp
+     # only get the account if we're connected as a miniapp
+     |> push_event("client:request", %{action: "get_account"})
      |> assign(:user_fid, user_fid)
      |> assign(:user_display_name, user_display_name)
      |> assign(:user_pfp_url, user_pfp_url)
@@ -39,26 +46,34 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_event("get_capabilities", _params, %{assigns: %{connected_address: connected_address}} = socket) do
+  def handle_event(
+        "get_capabilities",
+        _params,
+        %{assigns: %{connected_address: connected_address}} = socket
+      ) do
     {:noreply, socket |> push_event("client:request", %{action: "get_capabilities"})}
   end
 
   @impl true
   def handle_event("test_transaction", _params, %{assigns: %{connected_address: nil}} = socket) do
     # If not connected, prompt client to connect first
-      {:noreply, socket |> push_event("client:request", %{action: "connect_account"})}
+    {:noreply, socket |> push_event("client:request", %{action: "connect_account"})}
   end
 
   @impl true
-  def handle_event("test_transaction", _params, %{assigns: %{connected_address: connected_address}} = socket) do
-      calls = [
-        %{"to" => connected_address}
-      ]
+  def handle_event(
+        "test_transaction",
+        _params,
+        %{assigns: %{connected_address: connected_address}} = socket
+      ) do
+    calls = [
+      %{"to" => connected_address}
+    ]
 
-      {:noreply,
-       socket
-       |> push_event("client:request", %{action: "send_calls", params: %{"calls" => calls}})}
-    end
+    {:noreply,
+     socket
+     |> push_event("client:request", %{action: "send_calls", params: %{"calls" => calls}})}
+  end
 
   @impl true
   def handle_event(
@@ -66,8 +81,22 @@ defmodule MiniappWeb.WalletLive do
         %{"action" => "get_capabilities", "ok" => true, "result" => capabilities},
         socket
       ) do
-    Logger.info("get_capabilities completed with capabilities: #{inspect(capabilities)}")
-    {:noreply, socket |> put_flash(:info, "Capabilities: #{inspect(capabilities)}")}
+    base_capabilities = Map.get(capabilities, "8453", %{})
+
+    keys = [
+      {"atomic", :atomic},
+      {"atomicBatch", :atomic_batch},
+      {"auxiliaryFunds", :auxiliary_funds},
+      {"paymasterService", :paymaster_service}
+    ]
+
+    caps =
+      Map.new(keys, fn {k, name} ->
+        {name, get_in(base_capabilities, [k, "supported"]) in [true, "true"]}
+      end)
+
+    Logger.info("get_capabilities completed with capabilities: #{inspect(caps)}")
+    {:noreply, socket |> assign(:capabilities, caps)}
   end
 
   @impl true
@@ -113,7 +142,15 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_event("client:response", %{"action" => "connect_account", "ok" => true, "result" => %{"accounts" => [address | _]}}, socket) do
+  def handle_event(
+        "client:response",
+        %{
+          "action" => "connect_account",
+          "ok" => true,
+          "result" => %{"accounts" => [address | _]}
+        },
+        socket
+      ) do
     # We connected so now we can get the account
     {:noreply, socket |> assign(:connected_address, address)}
   end

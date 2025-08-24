@@ -4,7 +4,11 @@
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-4">
       <%= if @user_pfp_url do %>
-        <img src={@user_pfp_url} alt={@user_display_name} class={"w-10 h-10 rounded-full ring-2 #{if @connected_address, do: "ring-green-500", else: "ring-red-500"}"} />
+        <img
+          src={@user_pfp_url}
+          alt={@user_display_name}
+          class={"w-10 h-10 rounded-full ring-2 #{if @connected_address, do: "ring-green-500", else: "ring-red-500"}"}
+        />
       <% else %>
         <div class={"w-10 h-10 rounded-full bg-base-200 flex items-center justify-center ring-2 #{if @connected_address, do: "ring-green-500", else: "ring-red-500"}"}>
           <span class="text-base-content/70">{@user_fid}</span>
@@ -31,8 +35,12 @@
 
     <div class="w-full flex flex-col gap-3">
       <%= if @connected_address do %>
-        <button class="btn btn-secondary w-full" phx-click="get_capabilities">Get Capabilities</button>
-        <button class="btn btn-secondary w-full" phx-click="test_transaction">Test Transaction</button>
+        <button class="btn btn-secondary w-full" phx-click="get_capabilities">
+          Get Capabilities
+        </button>
+        <button class="btn btn-secondary w-full" phx-click="test_transaction">
+          Test Transaction
+        </button>
       <% end %>
     </div>
   </div>
