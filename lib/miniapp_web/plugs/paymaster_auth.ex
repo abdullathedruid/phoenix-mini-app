@@ -52,8 +52,7 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   end
 
   # Verify that the request body has the expected sender at params[0].sender
-  defp maybe_verify_sender(%{body_params: body} = _conn, %{"sender" => expected}) when is_map(body) do
-    actual = get_in(body, ["params", 0, "sender"])
+  defp maybe_verify_sender(%{body_params: %{"params" => [%{"sender" => actual} | _]}} = _conn, %{"sender" => expected}) do
     expected_norm = normalize_address(expected)
     actual_norm = normalize_address(actual)
 
