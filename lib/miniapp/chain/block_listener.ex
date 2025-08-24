@@ -44,12 +44,14 @@ defmodule Miniapp.Chain.BlockListener do
   @impl true
   def handle_continue(:subscribe, %{conn_pid: conn_pid} = state) when is_pid(conn_pid) do
     id = state.request_id + 1
+
     payload = %{
       jsonrpc: "2.0",
       id: id,
       method: "eth_subscribe",
       params: ["newHeads"]
     }
+
     :ok = send_json(conn_pid, payload)
     {:noreply, %{state | request_id: id}}
   end
@@ -73,6 +75,7 @@ defmodule Miniapp.Chain.BlockListener do
         else
           _ -> :noop
         end
+
         {:noreply, state}
 
       %{"id" => _id, "result" => _sub_id} ->
@@ -90,6 +93,7 @@ defmodule Miniapp.Chain.BlockListener do
 
   # Internal helpers
   defp connect_ws(nil), do: {:error, :no_ws_url_configured}
+
   defp connect_ws(ws_url) do
     # Use :websocket_client for low-level; here we simulate via a small port owner.
     # For simplicity and fewer deps, we use :gun for WS if available; but since
@@ -135,6 +139,7 @@ defmodule Miniapp.Chain.WsClient do
       {:ok, map} -> send(listener, {:ws_json, map})
       {:error, reason} -> Logger.debug("WS decode error: #{inspect(reason)}")
     end
+
     {:ok, state}
   end
 

@@ -69,6 +69,7 @@ if config_env() == :prod do
 
   otel_collector_host = System.get_env("OTEL_COLLECTOR_HOST")
   otel_collector_port = System.get_env("OTEL_COLLECTOR_PORT")
+
   if otel_collector_host && otel_collector_port do
     otel_collector_host = String.to_charlist(otel_collector_host)
     {otel_collector_port, ""} = Integer.parse(otel_collector_port)
@@ -84,7 +85,7 @@ if config_env() == :prod do
           }
         }
       }
-    end
+  end
 
   # ## SSL Support
   #
@@ -138,5 +139,4 @@ if config_env() == :prod do
 end
 
 # Blockchain WS endpoint in runtime (prod or others)
-config :miniapp, Miniapp.Chain,
-  ws_url: System.get_env("CHAIN_WS_URL")
+config :miniapp, Miniapp.Chain, ws_url: System.get_env("CHAIN_WS_URL")

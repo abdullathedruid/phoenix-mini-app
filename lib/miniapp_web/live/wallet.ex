@@ -18,19 +18,17 @@ defmodule MiniappWeb.WalletLive do
 
   @impl true
   def handle_event("miniapp:connect", %{"context" => context}, socket) do
-    %{"user" => %{"fid" => user_fid} = user,
-    "client" => %{"clientFid" => client_fid},
-    } = context
+    %{"user" => %{"fid" => user_fid} = user, "client" => %{"clientFid" => client_fid}} = context
 
     user_display_name = user |> Map.get("displayName")
     user_pfp_url = user |> Map.get("pfpUrl")
 
-    {:noreply, socket
-    |> assign(:user_fid, user_fid)
-    |> assign(:user_display_name, user_display_name)
-    |> assign(:user_pfp_url, user_pfp_url)
-    |> assign(:client_fid, client_fid)
-    }
+    {:noreply,
+     socket
+     |> assign(:user_fid, user_fid)
+     |> assign(:user_display_name, user_display_name)
+     |> assign(:user_pfp_url, user_pfp_url)
+     |> assign(:client_fid, client_fid)}
   end
 
   @impl true

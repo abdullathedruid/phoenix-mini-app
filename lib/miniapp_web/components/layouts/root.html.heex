@@ -4,20 +4,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <meta name="fc:miniapp" content={Jason.encode!(%{
-      version: "1",
-      imageUrl: "https://yoink.party/framesV2/opengraph-image",
-      button: %{
-        title: "🚩 Start",
-        action: %{
-          type: "launch_miniapp",
-          url: "https://phoenix.miniforge.uk",
-          name: "Yoink!",
-          splashImageUrl: "https://yoink.party/logo.png",
-          splashBackgroundColor: "#f5f0ec"
-        }
-      },
-    })} />
+    <meta
+      name="fc:miniapp"
+      content={
+        Jason.encode!(%{
+          version: "1",
+          imageUrl: "https://yoink.party/framesV2/opengraph-image",
+          button: %{
+            title: "🚩 Start",
+            action: %{
+              type: "launch_miniapp",
+              url: "https://phoenix.miniforge.uk",
+              name: "Yoink!",
+              splashImageUrl: "https://yoink.party/logo.png",
+              splashBackgroundColor: "#f5f0ec"
+            }
+          }
+        })
+      }
+    />
     <.live_title default="Miniapp" suffix=" · Phoenix Framework">
       {assigns[:page_title]}
     </.live_title>

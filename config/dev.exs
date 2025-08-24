@@ -91,5 +91,4 @@ config :swoosh, :api_client, false
 config :opentelemetry, :processors, nil
 
 # Blockchain WS endpoint (e.g., local geth, anvil, or public RPC with WS)
-config :miniapp, Miniapp.Chain,
-  ws_url: System.get_env("CHAIN_WS_URL") || "ws://localhost:8546"
+config :miniapp, Miniapp.Chain, ws_url: System.get_env("CHAIN_WS_URL") || "ws://localhost:8546"
