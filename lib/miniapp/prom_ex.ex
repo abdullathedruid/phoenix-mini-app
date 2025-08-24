@@ -81,7 +81,8 @@ defmodule Miniapp.PromEx do
 
   @doc false
   def git_sha do
-    read_git_meta_file("/etc/git_sha") || System.get_env("GIT_SHA") || "unknown"
+    sha = read_git_meta_file("/etc/git_sha") || System.get_env("GIT_SHA") || "unknown"
+    if sha != "unknown", do: String.slice(sha, 0, 7), else: sha
   end
 
   @doc false
