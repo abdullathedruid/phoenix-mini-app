@@ -48,7 +48,7 @@ defmodule MiniappWeb.WalletLive do
   def handle_event(
         "get_capabilities",
         _params,
-        %{assigns: %{connected_address: connected_address}} = socket
+        %{assigns: %{connected_address: _connected_address}} = socket
       ) do
     {:noreply, socket |> push_event("client:request", %{action: "get_capabilities"})}
   end
