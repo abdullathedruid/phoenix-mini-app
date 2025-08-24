@@ -185,6 +185,35 @@ defmodule MiniappWeb.WalletLiveTest do
       assert render(view)
     end
 
+    test "handles successful send_calls response with nested structure", %{conn: conn} do
+      {:ok, view, _html} = live(conn, "/embed/wallet")
+      
+      # First connect a wallet
+      view
+      |> render_hook("client:response", %{
+        "action" => "get_account",
+        "ok" => true,
+        "result" => %{"address" => "0x123abc"}
+      })
+      
+      # Send the nested send_calls response event using the exact structure from the error
+      view
+      |> render_hook("client:response", %{
+        "action" => "send_calls",
+        "id" => nil,
+        "ok" => true,
+        "result" => %{
+          "response" => %{
+            "capabilities" => %{},
+            "id" => "0x99e500b869bb652e439908089ccfd6fc24f9c4a8a1d3b8152660d8f26cb0265c"
+          }
+        }
+      })
+      
+      # Should handle without error
+      assert render(view)
+    end
+
     test "handles failed transaction response", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/embed/wallet")
       

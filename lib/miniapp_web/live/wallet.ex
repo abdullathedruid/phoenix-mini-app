@@ -106,6 +106,21 @@ defmodule MiniappWeb.WalletLive do
   @impl true
   def handle_event(
         "client:response",
+        %{"action" => "send_calls", "ok" => true, "result" => %{"response" => %{"id" => id}}},
+        socket
+      ) do
+    case socket.assigns[:connected_address] do
+      nil -> 
+        Logger.info("send_calls completed with id: #{id}")
+      wallet_address ->
+        Logger.info("Calls sent successfully - ID: #{id}, Wallet: #{wallet_address}")
+    end
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
         %{"action" => "send_calls", "ok" => true, "result" => %{"id" => id}},
         socket
       ) do
