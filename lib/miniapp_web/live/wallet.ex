@@ -1,6 +1,7 @@
 defmodule MiniappWeb.WalletLive do
   require Logger
   use MiniappWeb, :live_view
+  alias Miniapp.Transaction.Events
 
   @impl true
   def mount(_params, _session, socket) do
@@ -70,13 +71,12 @@ defmodule MiniappWeb.WalletLive do
       %{"to" => connected_address}
     ]
 
-    {:noreply,
-     socket
-     |> push_event("client:request", %{action: "send_calls", params: %{
-        "calls" => calls,
-        "capabilities" => %{"paymasterService" => %{"url" => paymaster_proxy_url_with_token(socket)}}
-      }})
-    }
+    {:ok, transaction_id} =
+      Miniapp.Transaction.Manager.request_transaction(calls, connected_address)
+
+    Logger.info("Requested transaction id #{transaction_id}")
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -97,7 +97,10 @@ defmodule MiniappWeb.WalletLive do
         %{"action" => "send_calls", "ok" => true, "result" => %{"id" => id}},
         socket
       ) do
-    Logger.info("send_calls completed with id: #{id} for address: #{socket.assigns[:connected_address]}")
+    Logger.info(
+      "send_calls completed with id: #{id} for address: #{socket.assigns[:connected_address]}"
+    )
+
     {:noreply,
      socket
      |> assign(:tx_loading, true)
@@ -118,7 +121,11 @@ defmodule MiniappWeb.WalletLive do
   @impl true
   def handle_event(
         "client:response",
-        %{"action" => "wait_for_calls_status", "ok" => true, "result" => %{"status" => "success", "receipts" => receipts}},
+        %{
+          "action" => "wait_for_calls_status",
+          "ok" => true,
+          "result" => %{"status" => "success", "receipts" => receipts}
+        },
         socket
       ) do
     Logger.info("wait_for_calls_status result: #{inspect(receipts)}")
@@ -141,6 +148,10 @@ defmodule MiniappWeb.WalletLive do
         %{"action" => "get_account", "ok" => true, "result" => %{"address" => address}},
         socket
       ) do
+    if connected?(socket) do
+      Miniapp.Transaction.Pubsub.subscribe_to_events(address)
+    end
+
     # We got an account so we can assign it to the socket
     {:noreply,
      socket
@@ -169,6 +180,10 @@ defmodule MiniappWeb.WalletLive do
         },
         socket
       ) do
+    if connected?(socket) do
+      Miniapp.Transaction.Pubsub.subscribe_to_events(address)
+    end
+
     # We connected so now we can get the account
     {:noreply,
      socket
@@ -197,17 +212,34 @@ defmodule MiniappWeb.WalletLive do
     {:noreply, assign(socket, :latest_block, block_number)}
   end
 
+  @impl true
+  def handle_info({:transaction_event, %Events.RequestSendCalls{calls: calls}}, socket) do
+    {:noreply,
+     socket
+     |> push_event("client:request", %{
+       action: "send_calls",
+       params: %{
+         "calls" => calls,
+         "capabilities" => %{
+           "paymasterService" => %{"url" => paymaster_proxy_url_with_token(socket)}
+         }
+       }
+     } |> dbg() )}
+  end
+
   defp paymaster_proxy_url do
     MiniappWeb.Endpoint.url() <> "/api/paymaster"
   end
 
   defp paymaster_proxy_url_with_token(socket) do
     sender = socket.assigns[:connected_address]
+
     claims = %{
       "fid" => socket.assigns[:user_fid],
       "ts" => System.system_time(:second),
       "sender" => is_binary(sender) && String.downcase(sender)
     }
+
     token = MiniappWeb.Plugs.PaymasterAuth.sign_token(claims)
     paymaster_proxy_url() <> "?token=" <> token
   end

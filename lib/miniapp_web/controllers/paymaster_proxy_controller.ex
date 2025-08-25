@@ -50,7 +50,9 @@ defmodule MiniappWeb.PaymasterProxyController do
 
   defp build_target_url(path_segments, query_string) do
     case System.get_env("PAYMASTER_URL") || get_config(:url) do
-      nil -> {:error, :no_upstream}
+      nil ->
+        {:error, :no_upstream}
+
       base_url ->
         base = URI.parse(base_url)
         joined_path = Enum.join(path_segments || [], "/")
@@ -72,19 +74,22 @@ defmodule MiniappWeb.PaymasterProxyController do
 
   # Build a safe set of headers to forward
   defp build_headers(conn) do
-    forward_header_names = MapSet.new([
-      "accept",
-      "content-type",
-      "user-agent",
-      "accept-language",
-      "accept-encoding",
-      "authorization",
-      "x-request-id"
-    ])
+    forward_header_names =
+      MapSet.new([
+        "accept",
+        "content-type",
+        "user-agent",
+        "accept-language",
+        "accept-encoding",
+        "authorization",
+        "x-request-id"
+      ])
 
     forwarded =
       conn.req_headers
-      |> Enum.filter(fn {name, _} -> MapSet.member?(forward_header_names, String.downcase(name)) end)
+      |> Enum.filter(fn {name, _} ->
+        MapSet.member?(forward_header_names, String.downcase(name))
+      end)
 
     {:ok, forwarded}
   end

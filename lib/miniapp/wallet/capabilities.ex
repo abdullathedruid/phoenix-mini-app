@@ -3,10 +3,10 @@ defmodule Miniapp.Wallet.Capabilities do
   Helpers for parsing capabilities from the client.
   """
   @type t() :: %{
-    atomic_status: :unsupported | :ready | :supported,
-    auxiliary_funds: boolean(),
-    paymaster_service: boolean()
-  }
+          atomic_status: :unsupported | :ready | :supported,
+          auxiliary_funds: boolean(),
+          paymaster_service: boolean()
+        }
 
   @spec parse(map()) :: t()
   def parse(%{"8453" => capabilities}) do

@@ -20,6 +20,8 @@ defmodule Miniapp.Application do
       Miniapp.Chain.Supervisor,
       # Start a worker by calling: Miniapp.Worker.start_link(arg)
       # {Miniapp.Worker, arg},
+      {Registry, keys: :unique, name: Miniapp.Transaction.Registry},
+      {DynamicSupervisor, name: Miniapp.Transaction.Supervisor, strategy: :one_for_one},
       # Start to serve requests, typically the last entry
       MiniappWeb.Endpoint
     ]
