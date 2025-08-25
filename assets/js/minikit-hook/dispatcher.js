@@ -34,13 +34,13 @@ export const actionHandlers = {
     const { id } = params ?? {};
     if (!id) throw new Error("wait_for_calls_status requires id");
     const response = await waitForCallsStatus(config, { id });
-    return { response };
+    return response;
   },
   async get_calls_status({ config, params }) {
     const { id } = params ?? {};
     if (!id) throw new Error("get_calls_status requires id");
     const response = await getCallsStatus(config, { id });
-    return { response };
+    return response;
   },
 };
 

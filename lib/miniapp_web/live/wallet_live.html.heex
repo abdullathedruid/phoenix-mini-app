@@ -24,7 +24,11 @@
       <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-secondary opacity-20 blur-2xl">
       </div>
       <div class="relative w-full h-full rounded-2xl bg-base-200 flex items-center justify-center shadow-lg">
-        <span class="text-6xl">✨</span>
+        <%= if @tx_loading do %>
+          <span class="loading loading-spinner loading-lg"></span>
+        <% else %>
+          <span class="text-6xl">✨</span>
+        <% end %>
       </div>
     </div>
 
@@ -35,11 +39,15 @@
 
     <div class="w-full flex flex-col gap-3">
       <%= if @connected_address do %>
-        <button class="btn btn-secondary w-full" phx-click="get_capabilities">
+        <button class="btn btn-secondary w-full" phx-click="get_capabilities" disabled={@tx_loading}>
           Get Capabilities
         </button>
-        <button class="btn btn-secondary w-full" phx-click="test_transaction">
-          Test Transaction
+        <button class="btn btn-secondary w-full" phx-click="test_transaction" disabled={@tx_loading}>
+          <%= if @tx_loading do %>
+            Submitting...
+          <% else %>
+            Test Transaction
+          <% end %>
         </button>
       <% end %>
     </div>

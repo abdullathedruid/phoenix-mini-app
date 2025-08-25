@@ -15,6 +15,7 @@ defmodule MiniappWeb.WalletLive do
      |> assign(:user_pfp_url, nil)
      |> assign(:latest_block, nil)
      |> assign(:connected_address, nil)
+     |> assign(:tx_loading, false)
      |> assign(:capabilities, %{
        atomic_status: :unsupported,
        auxiliary_funds: false,
@@ -99,6 +100,7 @@ defmodule MiniappWeb.WalletLive do
     Logger.info("send_calls completed with id: #{id} for address: #{socket.assigns[:connected_address]}")
     {:noreply,
      socket
+     |> assign(:tx_loading, true)
      |> push_event("client:request", %{action: "wait_for_calls_status", params: %{"id" => id}})}
   end
 
@@ -110,18 +112,17 @@ defmodule MiniappWeb.WalletLive do
       ) do
     # TODO: handle error - maybe the user rejected the transaction
     Logger.error("send_calls failed: #{inspect(error)}")
-    {:noreply, socket}
+    {:noreply, assign(socket, :tx_loading, false)}
   end
 
   @impl true
   def handle_event(
         "client:response",
-        %{"action" => "wait_for_calls_status", "ok" => true, "result" => result},
+        %{"action" => "wait_for_calls_status", "ok" => true, "result" => %{"status" => "success", "receipts" => receipts}},
         socket
       ) do
-    # Result shape may be %{"response" => %{...}} or the resolved object; log and surface minimal info
-    Logger.info("wait_for_calls_status result: #{inspect(result)}")
-    {:noreply, socket}
+    Logger.info("wait_for_calls_status result: #{inspect(receipts)}")
+    {:noreply, socket |> assign(:tx_loading, false) |> put_flash(:info, "Transaction successful")}
   end
 
   @impl true
@@ -131,7 +132,7 @@ defmodule MiniappWeb.WalletLive do
         socket
       ) do
     Logger.error("wait_for_calls_status failed: #{inspect(error)}")
-    {:noreply, socket}
+    {:noreply, assign(socket, :tx_loading, false)}
   end
 
   @impl true
