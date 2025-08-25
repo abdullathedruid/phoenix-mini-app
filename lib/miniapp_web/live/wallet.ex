@@ -93,26 +93,13 @@ defmodule MiniappWeb.WalletLive do
   @impl true
   def handle_event(
         "client:response",
-        %{"action" => "send_calls", "ok" => true, "result" => %{"response" => %{"id" => id}}},
-        socket
-      ) do
-    case socket.assigns[:connected_address] do
-      nil ->
-        Logger.info("send_calls completed with id: #{id}")
-      wallet_address ->
-        Logger.info("Calls sent successfully - ID: #{id}, Wallet: #{wallet_address}")
-    end
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event(
-        "client:response",
         %{"action" => "send_calls", "ok" => true, "result" => %{"id" => id}},
         socket
       ) do
-    Logger.info("send_calls completed with id: #{id}")
-    {:noreply, socket}
+    Logger.info("send_calls completed with id: #{id} for address: #{socket.assigns[:connected_address]}")
+    {:noreply,
+     socket
+     |> push_event("client:request", %{action: "wait_for_calls_status", params: %{"id" => id}})}
   end
 
   @impl true
@@ -123,6 +110,27 @@ defmodule MiniappWeb.WalletLive do
       ) do
     # TODO: handle error - maybe the user rejected the transaction
     Logger.error("send_calls failed: #{inspect(error)}")
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "wait_for_calls_status", "ok" => true, "result" => result},
+        socket
+      ) do
+    # Result shape may be %{"response" => %{...}} or the resolved object; log and surface minimal info
+    Logger.info("wait_for_calls_status result: #{inspect(result)}")
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "client:response",
+        %{"action" => "wait_for_calls_status", "ok" => false, "error" => error},
+        socket
+      ) do
+    Logger.error("wait_for_calls_status failed: #{inspect(error)}")
     {:noreply, socket}
   end
 
