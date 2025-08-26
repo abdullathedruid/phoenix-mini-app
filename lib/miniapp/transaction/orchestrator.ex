@@ -24,12 +24,15 @@ defmodule Miniapp.Transaction.Orchestrator do
     user_address = Keyword.fetch!(opts, :user_address)
     transaction = Keyword.fetch!(opts, :transaction)
 
+    measurements = %{system_time: System.system_time()}
+    :telemetry.execute([:transaction, :started], measurements, %{transaction_id: transaction_id, user_address: user_address, transaction: transaction})
+
     state = %__MODULE__{
       transaction_id: transaction_id,
       user_address: user_address,
       transaction: transaction,
       state: :initializing,
-      started_at: System.monotonic_time(:millisecond)
+      started_at: System.system_time(:millisecond)
     }
 
     # Start the transaction flow
@@ -74,6 +77,9 @@ defmodule Miniapp.Transaction.Orchestrator do
       timestamp: System.system_time(:millisecond)
     }
 
+    measurements = %{system_time: event.timestamp}
+    :telemetry.execute([:transaction, :broadcasted], measurements, %{call_id: send_calls_id})
+
     Pubsub.broadcast_event(state.user_address, event)
 
     {:noreply, new_state}
@@ -83,7 +89,8 @@ defmodule Miniapp.Transaction.Orchestrator do
   def handle_cast({:send_calls, _response}, state) do
     new_state = %{state | state: :failed}
 
-    # TODO: do we need to handle telemetry here?
+    measurements = %{duration: System.monotonic_time() - state.started_at}
+    :telemetry.execute([:transaction, :failed], measurements, %{reason: :send_calls_failure})
 
     {:stop, :normal, new_state}
   end
@@ -95,13 +102,16 @@ defmodule Miniapp.Transaction.Orchestrator do
            "ok" => true,
            "id" => transaction_id,
            "result" => %{
-             "receipts" => _receipts,
-             "status" => _status
+             "receipts" => receipts,
+             "status" => status
            }
          }},
         %{state: :calls_sent, transaction_id: transaction_id} = state
       ) do
     new_state = %{state | state: :completed}
+
+    measurements = %{duration: System.monotonic_time() - state.started_at}
+    :telemetry.execute([:transaction, :completed], measurements, %{receipts: receipts, status: status})
 
     {:stop, :normal, new_state}
   end
@@ -110,7 +120,8 @@ defmodule Miniapp.Transaction.Orchestrator do
   def handle_cast({:wait_for_calls_status, _response}, state) do
     new_state = %{state | state: :failed}
 
-    # TODO: do we need to handle telemetry here?
+    measurements = %{duration: System.monotonic_time() - state.started_at}
+    :telemetry.execute([:transaction, :failed], measurements, %{reason: :wait_for_calls_status_failure})
 
     {:stop, :normal, new_state}
   end

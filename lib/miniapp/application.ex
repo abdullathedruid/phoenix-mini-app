@@ -10,6 +10,7 @@ defmodule Miniapp.Application do
     OpentelemetryLoggerMetadata.setup()
     OpentelemetryPhoenix.setup(adapter: :bandit)
     OpentelemetryEcto.setup([:miniapp, :repo])
+    :ok = Miniapp.Transaction.Monitor.setup()
 
     children = [
       Miniapp.PromEx,
