@@ -2,11 +2,19 @@ defmodule Miniapp.Transaction.Monitor do
   @moduledoc """
   Monitors transaction system health and metrics
   """
+  require Logger
   alias OpenTelemetry.Span
   @tracer_id __MODULE__
 
   def setup(opts \\ []) do
     attach_handlers(opts)
+  end
+
+  def execute(event, measurements, meta) when is_list(event) do
+    :telemetry.execute([:transaction] ++ event, measurements, meta)
+  end
+  def execute(event, measurements, meta) when is_atom(event) do
+    :telemetry.execute([:transaction] ++ [event], measurements, meta)
   end
 
   defp attach_handlers(_opts) do
@@ -16,11 +24,18 @@ defmodule Miniapp.Transaction.Monitor do
         [:transaction, :started],
         [:transaction, :broadcasted],
         [:transaction, :completed],
-        [:transaction, :failed]
+        [:transaction, :failed],
+        [:transaction, :building, :started],
+        [:transaction, :building, :ended]
       ],
       &__MODULE__.handle_telemetry_event/4,
       %{}
     )
+  end
+
+  def handle_telemetry_event(event, measurements, meta, config) do
+    Logger.info("Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}")
+    :ok
   end
 
   def handle_telemetry_event([:transaction, :started], _measurements, meta, _config) do

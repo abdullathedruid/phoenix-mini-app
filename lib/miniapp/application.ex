@@ -9,13 +9,13 @@ defmodule Miniapp.Application do
   def start(_type, _args) do
     OpentelemetryLoggerMetadata.setup()
     OpentelemetryPhoenix.setup(adapter: :bandit)
-    OpentelemetryEcto.setup([:miniapp, :repo])
+    # OpentelemetryEcto.setup([:miniapp, :repo])
     :ok = Miniapp.Transaction.Monitor.setup()
 
     children = [
       Miniapp.PromEx,
       MiniappWeb.Telemetry,
-      Miniapp.Repo,
+      # Miniapp.Repo,
       {DNSCluster, query: Application.get_env(:miniapp, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Miniapp.PubSub},
       Miniapp.Chain.Supervisor,
