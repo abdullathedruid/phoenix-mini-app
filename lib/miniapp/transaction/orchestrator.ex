@@ -10,6 +10,10 @@ defmodule Miniapp.Transaction.Orchestrator do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(transaction_id))
   end
 
+  def report_send_calls_response(transaction_id, response) do
+    GenServer.cast(via_tuple(transaction_id), {:send_calls, response})
+  end
+
   # Server callbacks
 
   @impl true
@@ -33,9 +37,9 @@ defmodule Miniapp.Transaction.Orchestrator do
   end
 
   @impl true
-  def handle_info(:start_transaction, state) do
+  def handle_info(:start_transaction = msg, %{state: :initializing} = state) do
     # We might need to do some logic here
-    new_state = %{state | state: :awaiting_signature}
+    new_state = %{state | state: :awaiting_send_calls}
 
     event = %Events.RequestSendCalls{
       transaction_id: state.transaction_id,
@@ -47,6 +51,37 @@ defmodule Miniapp.Transaction.Orchestrator do
     Pubsub.broadcast_event(state.user_address, event)
 
     {:noreply, new_state}
+  end
+
+  @impl true
+  def handle_cast(
+        {:send_calls,
+         %{
+           "ok" => true,
+           "result" => %{"id" => send_calls_id} = response,
+           "id" => transaction_id
+         }},
+        %{state: :awaiting_send_calls, transaction_id: transaction_id} = state
+      ) do
+    new_state = %{state | state: :calls_sent}
+
+    event = %Events.RequestPollSendCalls{
+      transaction_id: state.transaction_id,
+      send_calls_id: send_calls_id,
+      capabilities: Map.get(response, "capabilities"),
+      timestamp: System.system_time(:millisecond)
+    }
+
+    Pubsub.broadcast_event(state.user_address, event)
+
+    {:noreply, new_state}
+  end
+
+  @impl true
+  def handle_cast({:send_calls, _response}, state) do
+    new_state = %{state | state: :failed}
+
+    {:stop, :normal, new_state}
   end
 
   defp via_tuple(transaction_id),

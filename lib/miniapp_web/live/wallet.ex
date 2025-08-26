@@ -1,5 +1,6 @@
 defmodule MiniappWeb.WalletLive do
   require Logger
+  alias Miniapp.Transaction
   use MiniappWeb, :live_view
   alias Miniapp.Transaction.Events
 
@@ -94,52 +95,29 @@ defmodule MiniappWeb.WalletLive do
   @impl true
   def handle_event(
         "client:response",
-        %{"action" => "send_calls", "ok" => true, "result" => %{"id" => id}},
+        %{"action" => "send_calls", "id" => transaction_id} = response,
         socket
       ) do
     Logger.info(
-      "send_calls completed with id: #{id} for address: #{socket.assigns[:connected_address]}"
+      "send_calls completed with id: #{transaction_id} for address: #{socket.assigns[:connected_address]}"
     )
 
-    {:noreply,
-     socket
-     |> assign(:tx_loading, true)
-     |> push_event("client:request", %{action: "wait_for_calls_status", params: %{"id" => id}})}
-  end
+    # TODO: need to poll for success
+    Transaction.Manager.report_send_calls_response(transaction_id, response)
 
-  @impl true
-  def handle_event(
-        "client:response",
-        %{"action" => "send_calls", "ok" => false, "error" => error},
-        socket
-      ) do
-    # TODO: handle error - maybe the user rejected the transaction
-    Logger.error("send_calls failed: #{inspect(error)}")
-    {:noreply, assign(socket, :tx_loading, false)}
+    {:noreply, socket}
   end
 
   @impl true
   def handle_event(
         "client:response",
         %{
-          "action" => "wait_for_calls_status",
-          "ok" => true,
-          "result" => %{"status" => "success", "receipts" => receipts}
-        },
+          "action" => "wait_for_calls_status"
+        } = response,
         socket
       ) do
-    Logger.info("wait_for_calls_status result: #{inspect(receipts)}")
-    {:noreply, socket |> assign(:tx_loading, false) |> put_flash(:info, "Transaction successful")}
-  end
-
-  @impl true
-  def handle_event(
-        "client:response",
-        %{"action" => "wait_for_calls_status", "ok" => false, "error" => error},
-        socket
-      ) do
-    Logger.error("wait_for_calls_status failed: #{inspect(error)}")
-    {:noreply, assign(socket, :tx_loading, false)}
+    Logger.info("wait_for_calls_status result: #{inspect(response)}")
+    {:noreply, socket |> assign(:tx_loading, false)}
   end
 
   @impl true
@@ -213,10 +191,14 @@ defmodule MiniappWeb.WalletLive do
   end
 
   @impl true
-  def handle_info({:transaction_event, %Events.RequestSendCalls{calls: calls}}, socket) do
+  def handle_info(
+        {:transaction_event, %Events.RequestSendCalls{calls: calls, transaction_id: id}},
+        socket
+      ) do
     {:noreply,
      socket
      |> push_event("client:request", %{
+       id: id,
        action: "send_calls",
        params: %{
          "calls" => calls,
@@ -224,7 +206,27 @@ defmodule MiniappWeb.WalletLive do
            "paymasterService" => %{"url" => paymaster_proxy_url_with_token(socket)}
          }
        }
-     } |> dbg() )}
+     })}
+  end
+
+  @impl true
+  def handle_info(
+        {:transaction_event,
+         %Events.RequestPollSendCalls{
+           transaction_id: transaction_id,
+           send_calls_id: send_calls_id
+         }},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> push_event("client:request", %{
+       id: transaction_id,
+       action: "wait_for_calls_status",
+       params: %{
+         "id" => send_calls_id
+       }
+     })}
   end
 
   defp paymaster_proxy_url do
