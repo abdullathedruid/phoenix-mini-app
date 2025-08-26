@@ -112,11 +112,14 @@ defmodule MiniappWeb.WalletLive do
   def handle_event(
         "client:response",
         %{
-          "action" => "wait_for_calls_status"
+          "action" => "wait_for_calls_status",
+          "id" => transaction_id
         } = response,
         socket
       ) do
     Logger.info("wait_for_calls_status result: #{inspect(response)}")
+
+    Transaction.Manager.report_wait_for_calls_status(transaction_id, response)
     {:noreply, socket |> assign(:tx_loading, false)}
   end
 

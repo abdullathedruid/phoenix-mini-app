@@ -22,6 +22,9 @@ defmodule Miniapp.Transaction.Manager do
   def report_send_calls_response(transaction_id, response),
     do: Orchestrator.report_send_calls_response(transaction_id, response)
 
+  def report_wait_for_calls_status(transaction_id, response),
+    do: Orchestrator.report_wait_for_calls_status(transaction_id, response)
+
   defp generate_transaction_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end

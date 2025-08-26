@@ -10,9 +10,11 @@ defmodule Miniapp.Transaction.Orchestrator do
     GenServer.start_link(__MODULE__, opts, name: via_tuple(transaction_id))
   end
 
-  def report_send_calls_response(transaction_id, response) do
-    GenServer.cast(via_tuple(transaction_id), {:send_calls, response})
-  end
+  def report_send_calls_response(transaction_id, response),
+    do: GenServer.cast(via_tuple(transaction_id), {:send_calls, response})
+
+  def report_wait_for_calls_status(transaction_id, response),
+    do: GenServer.cast(via_tuple(transaction_id), {:wait_for_calls_status, response})
 
   # Server callbacks
 
@@ -37,7 +39,7 @@ defmodule Miniapp.Transaction.Orchestrator do
   end
 
   @impl true
-  def handle_info(:start_transaction = msg, %{state: :initializing} = state) do
+  def handle_info(:start_transaction, %{state: :initializing} = state) do
     # We might need to do some logic here
     new_state = %{state | state: :awaiting_send_calls}
 
@@ -80,6 +82,35 @@ defmodule Miniapp.Transaction.Orchestrator do
   @impl true
   def handle_cast({:send_calls, _response}, state) do
     new_state = %{state | state: :failed}
+
+    # TODO: do we need to handle telemetry here?
+
+    {:stop, :normal, new_state}
+  end
+
+  @impl true
+  def handle_cast(
+        {:wait_for_calls_status,
+         %{
+           "ok" => true,
+           "id" => transaction_id,
+           "result" => %{
+             "receipts" => _receipts,
+             "status" => _status
+           }
+         }},
+        %{state: :calls_sent, transaction_id: transaction_id} = state
+      ) do
+    new_state = %{state | state: :completed}
+
+    {:stop, :normal, new_state}
+  end
+
+  @impl true
+  def handle_cast({:wait_for_calls_status, _response}, state) do
+    new_state = %{state | state: :failed}
+
+    # TODO: do we need to handle telemetry here?
 
     {:stop, :normal, new_state}
   end
