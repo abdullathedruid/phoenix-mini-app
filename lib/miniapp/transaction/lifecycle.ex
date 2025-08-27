@@ -38,27 +38,56 @@ defmodule Miniapp.Transaction.Lifecycle do
     user_address = Keyword.fetch!(opts, :user_address)
     transaction = Keyword.fetch!(opts, :transaction)
 
-    Monitor.execute(:started, %{}, %{transaction_id: transaction_id})
+    Monitor.execute([:parent, :started], %{}, %{
+      transaction_id: transaction_id,
+      user_address: user_address
+    })
 
     state = %__MODULE__{
       transaction_id: transaction_id,
       user_address: user_address,
-      transaction: transaction
+      transaction: transaction,
+      started_at: System.monotonic_time()
     }
 
     {:ok, :building, state, {:next_event, :internal, :build_transaction}}
   end
 
   @impl :gen_statem
-  def terminate(_reason, _current_state, data) do
-    Monitor.execute([:ended], %{}, %{transaction_id: data.transaction_id})
+  def terminate(reason, _current_state, data) do
+    duration_native = System.monotonic_time() - (data.started_at || System.monotonic_time())
+    duration_ms = System.convert_time_unit(max(duration_native, 0), :native, :millisecond)
+
+    status =
+      case reason do
+        {:shutdown, status_atom} when is_atom(status_atom) -> Atom.to_string(status_atom)
+        :normal -> "success"
+        other -> to_string(other)
+      end
+
+    Monitor.execute(
+      [
+        :parent,
+        :ended
+      ],
+      %{duration_ms: duration_ms},
+      %{
+        transaction_id: data.transaction_id,
+        user_address: data.user_address,
+        status: status
+      }
+    )
+
     :ok
   end
 
   # State callbacks
 
   def building(:enter, :building, data) do
-    Monitor.execute([:building, :started], %{}, %{transaction_id: data.transaction_id})
+    Monitor.execute([:building, :started], %{}, %{
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
+    })
 
     :keep_state_and_data
   end
@@ -73,20 +102,31 @@ defmodule Miniapp.Transaction.Lifecycle do
     |> Dispatcher.build_request(id: data.transaction_id)
     |> Pubsub.broadcast_event(data.user_address)
 
-    Monitor.execute([:building, :ended], %{}, %{transaction_id: data.transaction_id})
+    Monitor.execute([:building, :ended], %{}, %{
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
+    })
 
     {:next_state, :requested, data}
   end
 
   def requested(:enter, :building, data) do
-    Monitor.execute([:requested, :started], %{}, %{transaction_id: data.transaction_id})
+    Monitor.execute([:requested, :started], %{}, %{
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
+    })
 
     :keep_state_and_data
   end
 
   def requested(:cast, {:send_calls, %{"ok" => false} = response}, data) do
     Logger.warning("Received send calls failure #{inspect(response)}")
-    Monitor.execute([:requested, :ended], %{}, %{transaction_id: data.transaction_id})
+
+    Monitor.execute([:requested, :ended], %{}, %{
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
+    })
+
     {:stop, {:shutdown, :user_rejected}}
   end
 
@@ -97,7 +137,12 @@ defmodule Miniapp.Transaction.Lifecycle do
       ) do
     Logger.info("Received send calls success #{inspect(response)}")
     data = %{data | send_calls_id: send_calls_id}
-    Monitor.execute([:requested, :ended], %{}, %{transaction_id: data.transaction_id})
+
+    Monitor.execute([:requested, :ended], %{}, %{
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
+    })
+
     {:next_state, :waiting_for_calls_status, data}
   end
 
@@ -109,7 +154,8 @@ defmodule Miniapp.Transaction.Lifecycle do
     |> Pubsub.broadcast_event(data.user_address)
 
     Monitor.execute([:waiting_for_calls_status, :started], %{}, %{
-      transaction_id: data.transaction_id
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
     })
 
     :keep_state_and_data
@@ -119,7 +165,8 @@ defmodule Miniapp.Transaction.Lifecycle do
     Logger.warning("Received wait for calls status failure #{inspect(response)}")
 
     Monitor.execute([:waiting_for_calls_status, :ended], %{}, %{
-      transaction_id: data.transaction_id
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
     })
 
     {:stop, {:shutdown, :transaction_failed}}
@@ -129,7 +176,8 @@ defmodule Miniapp.Transaction.Lifecycle do
     Logger.info("Received wait for calls status success #{inspect(response)}")
 
     Monitor.execute([:waiting_for_calls_status, :ended], %{}, %{
-      transaction_id: data.transaction_id
+      transaction_id: data.transaction_id,
+      user_address: data.user_address
     })
 
     {:stop, {:shutdown, :transaction_completed}}
@@ -139,7 +187,7 @@ defmodule Miniapp.Transaction.Lifecycle do
   def handle_event(atom, oldState, currentState, data) do
     Logger.warning("Unhandled event")
     dbg()
-    :error
+    :keep_state_and_data
   end
 
   defp via_tuple(transaction_id),

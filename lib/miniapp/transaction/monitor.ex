@@ -36,8 +36,8 @@ defmodule Miniapp.Transaction.Monitor do
     :telemetry.attach_many(
       {__MODULE__, :transaction_monitor},
       [
-        [:transaction, :started],
-        [:transaction, :ended],
+        [:transaction, :parent, :started],
+        [:transaction, :parent, :ended],
         [:transaction, :building, :started],
         [:transaction, :building, :ended],
         [:transaction, :requested, :started],
@@ -50,37 +50,42 @@ defmodule Miniapp.Transaction.Monitor do
     )
   end
 
-  def handle_telemetry_event(event, measurements, meta, config) do
+  def handle_telemetry_event([_, _, :started] = event, measurements, meta, config) do
     Logger.info(
       "Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}"
     )
 
-    :ok
-  end
-
-  def handle_telemetry_event([:transaction, :started], _measurements, meta, _config) do
-    dbg()
-
     OpentelemetryTelemetry.start_telemetry_span(
       @tracer_id,
-      "transaction",
+      get_span_name(event, meta),
       meta,
       %{}
     )
+    |> Span.set_attributes(%{
+      user_address: meta.user_address,
+      transaction_id: meta.transaction_id
+    })
+
+    :ok
   end
 
-  def handle_telemetry_event([:transaction, ended], measurements, meta, config)
-      when ended in [:completed, :failed] do
-    dbg()
-    ctx = OpentelemetryTelemetry.set_current_telemetry_span(@tracer_id, meta)
-    duration_ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
-    Span.set_attribute(ctx, :duration_ms, duration_ms)
-    OpentelemetryTelemetry.end_telemetry_span(@tracer_id, meta)
+  def handle_telemetry_event([_, _, :ended] = event, measurements, meta, config) do
+    Logger.info(
+      "Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}"
+    )
+
+    attributes =
+      if Map.has_key?(meta, :reason) do
+        %{status: inspect(meta.reason)}
+      else
+        %{status: "success"}
+      end
+      |> Map.merge(%{user_address: meta.user_address, transaction_id: meta.transaction_id})
+
+    OpentelemetryTelemetry.end_telemetry_span(@tracer_id, attributes)
   end
 
-  def handle_telemetry_event([:transaction, :broadcasted], _measurements, meta, _config) do
-    dbg()
-    ctx = OpentelemetryTelemetry.set_current_telemetry_span(@tracer_id, meta)
-    Span.add_event(ctx, "transaction-broadcasted", %{})
+  defp get_span_name([_, state, :started], _meta) do
+    "transaction.#{state}"
   end
 end
