@@ -67,12 +67,10 @@ defmodule MiniappWeb.WalletLive do
         _params,
         %{assigns: %{connected_address: connected_address, user_fid: user_fid}} = socket
       ) do
-    calls = [
-      %{"to" => connected_address}
-    ]
+    transaction = Miniapp.Transaction.EmptySendToSelf.new(connected_address)
 
     {:ok, transaction_id} =
-      Miniapp.Transaction.Manager.request_transaction(calls, connected_address, user_fid: user_fid)
+      Miniapp.Transaction.Manager.request_transaction(transaction, connected_address, user_fid: user_fid)
 
     Logger.info("Requested transaction id #{transaction_id}")
 
