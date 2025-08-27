@@ -65,14 +65,14 @@ defmodule MiniappWeb.WalletLive do
   def handle_event(
         "test_transaction",
         _params,
-        %{assigns: %{connected_address: connected_address}} = socket
+        %{assigns: %{connected_address: connected_address, user_fid: user_fid}} = socket
       ) do
     calls = [
       %{"to" => connected_address}
     ]
 
     {:ok, transaction_id} =
-      Miniapp.Transaction.Manager.request_transaction(calls, connected_address)
+      Miniapp.Transaction.Manager.request_transaction(calls, connected_address, user_fid: user_fid)
 
     Logger.info("Requested transaction id #{transaction_id}")
 
@@ -202,21 +202,4 @@ defmodule MiniappWeb.WalletLive do
      |> push_event("client:request", event)}
   end
 
-  # TODO: we should move this to a helper module specific to paymaster
-  # defp paymaster_proxy_url do
-  #   MiniappWeb.Endpoint.url() <> "/api/paymaster"
-  # end
-
-  # defp paymaster_proxy_url_with_token(socket) do
-  #   sender = socket.assigns[:connected_address]
-
-  #   claims = %{
-  #     "fid" => socket.assigns[:user_fid],
-  #     "ts" => System.system_time(:second),
-  #     "sender" => is_binary(sender) && String.downcase(sender)
-  #   }
-
-  #   token = MiniappWeb.Plugs.PaymasterAuth.sign_token(claims)
-  #   paymaster_proxy_url() <> "?token=" <> token
-  # end
 end

@@ -1,12 +1,13 @@
 defmodule Miniapp.Transaction.Lifecycle do
   alias Miniapp.Client.Dispatcher
-  alias Miniapp.Transaction.{Monitor, Pubsub}
+  alias Miniapp.Transaction.{Monitor, Paymaster, Pubsub}
 
   require Logger
   @behaviour :gen_statem
 
   defstruct transaction_id: nil,
             user_address: nil,
+            user_fid: nil,
             transaction: nil,
             state: nil,
             started_at_root: nil,
@@ -45,6 +46,7 @@ defmodule Miniapp.Transaction.Lifecycle do
     transaction_id = Keyword.fetch!(opts, :transaction_id)
     user_address = Keyword.fetch!(opts, :user_address)
     transaction = Keyword.fetch!(opts, :transaction)
+    user_fid = Keyword.get(opts, :user_fid)
 
     Monitor.execute([:parent, :started], %{}, %{
       transaction_id: transaction_id,
@@ -54,6 +56,7 @@ defmodule Miniapp.Transaction.Lifecycle do
     state = %__MODULE__{
       transaction_id: transaction_id,
       user_address: user_address,
+      user_fid: user_fid,
       transaction: transaction,
       started_at_root: System.monotonic_time()
     }
@@ -103,11 +106,14 @@ defmodule Miniapp.Transaction.Lifecycle do
   end
 
   def building(:internal, :build_transaction, data) do
+    # Build capabilities including paymaster if available
+    capabilities = Paymaster.build_capabilities(data.user_address, data.user_fid)
+
     # DO WORK
     %Miniapp.Client.Events.SendCalls{
       account: data.user_address,
       calls: data.transaction,
-      capabilities: %{}
+      capabilities: capabilities
     }
     |> Dispatcher.build_request(id: data.transaction_id)
     |> Pubsub.broadcast_event(data.user_address)
