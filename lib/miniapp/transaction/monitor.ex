@@ -55,16 +55,19 @@ defmodule Miniapp.Transaction.Monitor do
       "Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}"
     )
 
+    attributes = %{
+      user_address: meta.user_address,
+      transaction_id: meta.transaction_id
+    }
+    |> maybe_add_client_name(meta)
+
     OpentelemetryTelemetry.start_telemetry_span(
       @tracer_id,
       get_span_name(event, meta),
       meta,
       %{}
     )
-    |> Span.set_attributes(%{
-      user_address: meta.user_address,
-      transaction_id: meta.transaction_id
-    })
+    |> Span.set_attributes(attributes)
 
     :ok
   end
@@ -81,6 +84,7 @@ defmodule Miniapp.Transaction.Monitor do
         %{status: "success"}
       end
       |> Map.merge(%{user_address: meta.user_address, transaction_id: meta.transaction_id})
+      |> maybe_add_client_name(meta)
 
     OpentelemetryTelemetry.end_telemetry_span(@tracer_id, attributes)
   end
@@ -88,4 +92,8 @@ defmodule Miniapp.Transaction.Monitor do
   defp get_span_name([_, state, :started], _meta) do
     "transaction.#{state}"
   end
+
+  defp maybe_add_client_name(attributes, %{client_name: client_name}) when not is_nil(client_name),
+    do: Map.put(attributes, :client_name, client_name)
+  defp maybe_add_client_name(attributes, _meta), do: attributes
 end
