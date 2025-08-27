@@ -8,6 +8,7 @@ defmodule Miniapp.Transaction.Lifecycle do
   defstruct transaction_id: nil,
             user_address: nil,
             user_fid: nil,
+            client_name: nil,
             transaction: nil,
             state: nil,
             started_at_root: nil,
@@ -47,16 +48,19 @@ defmodule Miniapp.Transaction.Lifecycle do
     user_address = Keyword.fetch!(opts, :user_address)
     transaction = Keyword.fetch!(opts, :transaction)
     user_fid = Keyword.get(opts, :user_fid)
+    client_name = Keyword.get(opts, :client_name)
 
     Monitor.execute([:parent, :started], %{}, %{
       transaction_id: transaction_id,
-      user_address: user_address
+      user_address: user_address,
+      client_name: client_name
     })
 
     state = %__MODULE__{
       transaction_id: transaction_id,
       user_address: user_address,
       user_fid: user_fid,
+      client_name: client_name,
       transaction: transaction,
       started_at_root: System.monotonic_time()
     }
@@ -85,6 +89,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: status
       }
     )
@@ -99,7 +104,8 @@ defmodule Miniapp.Transaction.Lifecycle do
 
     Monitor.execute([:building, :started], %{}, %{
       transaction_id: data.transaction_id,
-      user_address: data.user_address
+      user_address: data.user_address,
+      client_name: data.client_name
     })
 
     {:keep_state, data}
@@ -128,6 +134,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: :success
       }
     )
@@ -140,7 +147,8 @@ defmodule Miniapp.Transaction.Lifecycle do
 
     Monitor.execute([:requested, :started], %{}, %{
       transaction_id: data.transaction_id,
-      user_address: data.user_address
+      user_address: data.user_address,
+      client_name: data.client_name
     })
 
     {:keep_state, data}
@@ -155,6 +163,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: :user_rejected
       }
     )
@@ -177,6 +186,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: :success
       }
     )
@@ -195,7 +205,8 @@ defmodule Miniapp.Transaction.Lifecycle do
 
     Monitor.execute([:waiting_for_calls_status, :started], %{}, %{
       transaction_id: data.transaction_id,
-      user_address: data.user_address
+      user_address: data.user_address,
+      client_name: data.client_name
     })
 
     {:keep_state, data}
@@ -214,6 +225,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: :transaction_failed
       }
     )
@@ -230,6 +242,7 @@ defmodule Miniapp.Transaction.Lifecycle do
       %{
         transaction_id: data.transaction_id,
         user_address: data.user_address,
+        client_name: data.client_name,
         status: :success
       }
     )

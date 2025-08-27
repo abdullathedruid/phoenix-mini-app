@@ -65,12 +65,18 @@ defmodule MiniappWeb.WalletLive do
   def handle_event(
         "test_transaction",
         _params,
-        %{assigns: %{connected_address: connected_address, user_fid: user_fid}} = socket
+        %{assigns: %{connected_address: connected_address, user_fid: user_fid} = assigns} = socket
       ) do
     transaction = Miniapp.Transaction.EmptySendToSelf.new(connected_address)
 
+    # Convert client_fid to client_name to keep transaction system agnostic
+    client_fid = Map.get(assigns, :client_fid)
+    client_name = client_fid_to_name(client_fid)
+
     {:ok, transaction_id} =
-      Miniapp.Transaction.Manager.request_transaction(transaction, connected_address, user_fid: user_fid)
+      Miniapp.Transaction.Manager.request_transaction(transaction, connected_address, 
+        user_fid: user_fid, 
+        client_name: client_name)
 
     Logger.info("Requested transaction id #{transaction_id}")
 
@@ -199,5 +205,13 @@ defmodule MiniappWeb.WalletLive do
      socket
      |> push_event("client:request", event)}
   end
+
+  # Helper function to convert client_fid to a human-readable client name
+  # This keeps the transaction system agnostic to miniapp specifics
+  defp client_fid_to_name(9152), do: "farcaster"
+  defp client_fid_to_name(309857), do: "baseapp"
+  defp client_fid_to_name(client_fid) when is_integer(client_fid), do: "client_#{client_fid}"
+  defp client_fid_to_name(client_fid) when is_binary(client_fid), do: "client_#{client_fid}"
+  defp client_fid_to_name(_), do: nil
 
 end

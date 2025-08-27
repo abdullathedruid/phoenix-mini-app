@@ -13,37 +13,49 @@ defmodule Miniapp.PromEx.TxPlugin do
             "miniapp_transaction_total_duration_ms",
             event_name: [:transaction, :parent, :ended],
             measurement: :duration_ms,
-            tags: [:status],
+            tags: [:status, :client_name],
+            tag_values: &get_tag_values/1,
             reporter_options: [buckets: [250, 500, 1000, 2000, 5000, 10_000, 30_000]]
           ),
           distribution(
             "miniapp_transaction_building_duration_ms",
             event_name: [:transaction, :building, :ended],
             measurement: :duration_ms,
-            tags: [:status],
+            tags: [:status, :client_name],
+            tag_values: &get_tag_values/1,
             reporter_options: [buckets: [250, 500, 1000, 2000, 5000, 10_000, 30_000]]
           ),
           distribution(
             "miniapp_transaction_requested_duration_ms",
             event_name: [:transaction, :requested, :ended],
             measurement: :duration_ms,
-            tags: [:status],
+            tags: [:status, :client_name],
+            tag_values: &get_tag_values/1,
             reporter_options: [buckets: [250, 500, 1000, 2000, 5000, 10_000, 30_000]]
           ),
           distribution(
             "miniapp_transaction_waiting_for_calls_status_duration_ms",
             event_name: [:transaction, :waiting_for_calls_status, :ended],
             measurement: :duration_ms,
-            tags: [:status],
+            tags: [:status, :client_name],
+            tag_values: &get_tag_values/1,
             reporter_options: [buckets: [250, 500, 1000, 2000, 5000, 10_000, 30_000]]
           ),
           counter(
             "miniapp_transaction_total_count",
             event_name: [:transaction, :parent, :ended],
-            tags: [:status]
+            tags: [:status, :client_name],
+            tag_values: &get_tag_values/1
           )
         ]
       )
     ]
+  end
+
+  defp get_tag_values(metadata) do
+    %{
+      status: Map.get(metadata, :status, "unknown"),
+      client_name: Map.get(metadata, :client_name, "unknown")
+    }
   end
 end

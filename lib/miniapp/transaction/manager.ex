@@ -8,7 +8,8 @@ defmodule Miniapp.Transaction.Manager do
       transaction_id: transaction_id,
       user_address: user_address,
       transaction: transaction,
-      user_fid: Keyword.get(opts, :user_fid)
+      user_fid: Keyword.get(opts, :user_fid),
+      client_name: Keyword.get(opts, :client_name)
     ]
 
     with {:ok, _pid} <-
