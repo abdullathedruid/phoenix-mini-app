@@ -2,7 +2,7 @@ defmodule Miniapp.Transaction.LifecycleTest do
   use ExUnit.Case, async: false
   import ExUnit.CaptureLog
 
-  alias Miniapp.Transaction.Lifecycle
+  alias Miniapp.Transaction.{Lifecycle, EmptySendToSelf}
 
   setup do
     # Start the registry for testing if not already started
@@ -13,7 +13,7 @@ defmodule Miniapp.Transaction.LifecycleTest do
 
     transaction_id = "test_tx_#{:rand.uniform(10000)}"
     user_address = "0x1234567890abcdef"
-    transaction = [%{to: "0xabcd", value: 100}]
+    transaction = EmptySendToSelf.new(user_address)
 
     opts = [
       transaction_id: transaction_id,
@@ -43,12 +43,12 @@ defmodule Miniapp.Transaction.LifecycleTest do
     end
 
     test "requires transaction_id" do
-      opts = [user_address: "0x1234", transaction: []]
+      opts = [user_address: "0x1234", transaction: EmptySendToSelf.new("0x1234")]
       assert_raise KeyError, fn -> Lifecycle.init(opts) end
     end
 
     test "requires user_address" do
-      opts = [transaction_id: "tx123", transaction: []]
+      opts = [transaction_id: "tx123", transaction: EmptySendToSelf.new("0x1234")]
       assert_raise KeyError, fn -> Lifecycle.init(opts) end
     end
 
@@ -168,7 +168,7 @@ defmodule Miniapp.Transaction.LifecycleTest do
       opts = [
         transaction_id: transaction_id,
         user_address: "0x1234",
-        transaction: []
+        transaction: EmptySendToSelf.new("0x1234")
       ]
       
       # Start a process to receive the cast
@@ -184,7 +184,7 @@ defmodule Miniapp.Transaction.LifecycleTest do
       opts = [
         transaction_id: transaction_id,
         user_address: "0x1234", 
-        transaction: []
+        transaction: EmptySendToSelf.new("0x1234")
       ]
       
       # Start a process to receive the cast
@@ -199,7 +199,7 @@ defmodule Miniapp.Transaction.LifecycleTest do
 
   describe "child_spec/1" do
     test "returns correct child spec" do
-      opts = [transaction_id: "test", user_address: "0x1234", transaction: []]
+      opts = [transaction_id: "test", user_address: "0x1234", transaction: EmptySendToSelf.new("0x1234")]
       spec = Lifecycle.child_spec(opts)
       
       assert spec.id == Lifecycle
