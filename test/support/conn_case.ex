@@ -31,8 +31,8 @@ defmodule MiniappWeb.ConnCase do
     end
   end
 
-  setup tags do
-    Miniapp.DataCase.setup_sandbox(tags)
+  setup _tags do
+    # Miniapp.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

@@ -70,12 +70,12 @@ defmodule Miniapp.PromEx do
       {Plugins.Phoenix, router: MiniappWeb.Router, endpoint: MiniappWeb.Endpoint},
       Plugins.Ecto,
       # Plugins.Oban,
-      Plugins.PhoenixLiveView
+      Plugins.PhoenixLiveView,
       # Plugins.Absinthe,
       # Plugins.Broadway,
 
       # Add your own PromEx metrics plugins
-      # Miniapp.Users.PromExPlugin
+      Miniapp.PromEx.TxPlugin
     ]
   end
 

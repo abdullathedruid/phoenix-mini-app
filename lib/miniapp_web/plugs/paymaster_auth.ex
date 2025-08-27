@@ -30,11 +30,15 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
       end
 
     case result do
-      {:ok, claims} -> assign(conn, :paymaster_claims, claims)
+      {:ok, claims} ->
+        assign(conn, :paymaster_claims, claims)
+
       {:error, reason} ->
         payload = build_error_payload(conn, reason)
 
-        Logger.warning("paymaster auth failed #{inspect(payload)} #{inspect(conn.request_path)} #{inspect(conn.method)}")
+        Logger.warning(
+          "paymaster auth failed #{inspect(payload)} #{inspect(conn.request_path)} #{inspect(conn.method)}"
+        )
 
         conn
         |> send_resp(401, "")
@@ -51,7 +55,9 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   end
 
   # Verify that the request body has the expected sender at params[0].sender
-  defp maybe_verify_sender(%{body_params: %{"params" => [%{"sender" => actual} | _]}} = _conn, %{"sender" => expected}) do
+  defp maybe_verify_sender(%{body_params: %{"params" => [%{"sender" => actual} | _]}} = _conn, %{
+         "sender" => expected
+       }) do
     expected_norm = normalize_address(expected)
     actual_norm = normalize_address(actual)
 
@@ -94,6 +100,8 @@ defmodule MiniappWeb.Plugs.PaymasterAuth do
   defp format_reason(other) when is_atom(other), do: Atom.to_string(other)
   defp format_reason(other), do: inspect(other)
 
-  defp reason_details({:sender_mismatch, %{expected: e, actual: a}}), do: %{expected: e, actual: a}
+  defp reason_details({:sender_mismatch, %{expected: e, actual: a}}),
+    do: %{expected: e, actual: a}
+
   defp reason_details(_), do: nil
 end

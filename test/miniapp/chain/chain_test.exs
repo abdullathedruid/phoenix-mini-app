@@ -7,10 +7,10 @@ defmodule Miniapp.ChainTest do
     test "broadcasts block number to subscribers" do
       # Subscribe to block updates
       :ok = Chain.subscribe_to_blocks()
-      
+
       # Broadcast a block number
       :ok = Chain.broadcast_block_number(123_456)
-      
+
       # Should receive the broadcast
       assert_receive {:new_block, 123_456}, 100
     end

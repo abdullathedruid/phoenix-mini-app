@@ -6,9 +6,11 @@ defmodule Miniapp.Wallet.CapabilitiesTest do
   describe "parse/1" do
     test "parses supported atomic status" do
       input = %{
-        "8453" => %{"atomic" => %{"status" => "supported"},
+        "8453" => %{
+          "atomic" => %{"status" => "supported"},
           "auxiliaryFunds" => %{"supported" => true},
-          "paymasterService" => %{"supported" => true}}
+          "paymasterService" => %{"supported" => true}
+        }
       }
 
       assert %{
@@ -20,9 +22,11 @@ defmodule Miniapp.Wallet.CapabilitiesTest do
 
     test "parses ready atomic status" do
       input = %{
-        "8453" => %{"atomic" => %{"status" => "ready"},
+        "8453" => %{
+          "atomic" => %{"status" => "ready"},
           "auxiliaryFunds" => %{"supported" => false},
-          "paymasterService" => %{"supported" => false}}
+          "paymasterService" => %{"supported" => false}
+        }
       }
 
       assert %{
@@ -34,9 +38,11 @@ defmodule Miniapp.Wallet.CapabilitiesTest do
 
     test "defaults to unsupported when unknown or missing status" do
       input = %{
-        "8453" => %{"atomic" => %{"status" => "unknown"},
+        "8453" => %{
+          "atomic" => %{"status" => "unknown"},
           "auxiliaryFunds" => %{"supported" => false},
-          "paymasterService" => %{"supported" => false}}
+          "paymasterService" => %{"supported" => false}
+        }
       }
 
       assert %{
@@ -47,8 +53,10 @@ defmodule Miniapp.Wallet.CapabilitiesTest do
 
       # Missing atomic key entirely also defaults to unsupported
       input2 = %{
-        "8453" => %{"auxiliaryFunds" => %{"supported" => false},
-          "paymasterService" => %{"supported" => false}}
+        "8453" => %{
+          "auxiliaryFunds" => %{"supported" => false},
+          "paymasterService" => %{"supported" => false}
+        }
       }
 
       assert %{
@@ -60,18 +68,22 @@ defmodule Miniapp.Wallet.CapabilitiesTest do
 
     test "treats boolean or string true as supported flags" do
       input_bool_true = %{
-        "8453" => %{"atomic" => %{"status" => "supported"},
+        "8453" => %{
+          "atomic" => %{"status" => "supported"},
           "auxiliaryFunds" => %{"supported" => true},
-          "paymasterService" => %{"supported" => true}}
+          "paymasterService" => %{"supported" => true}
+        }
       }
 
       assert %{auxiliary_funds: true, paymaster_service: true} =
                Capabilities.parse(input_bool_true)
 
       input_string_true = %{
-        "8453" => %{"atomic" => %{"status" => "supported"},
+        "8453" => %{
+          "atomic" => %{"status" => "supported"},
           "auxiliaryFunds" => %{"supported" => "true"},
-          "paymasterService" => %{"supported" => "true"}}
+          "paymasterService" => %{"supported" => "true"}
+        }
       }
 
       assert %{auxiliary_funds: true, paymaster_service: true} =
