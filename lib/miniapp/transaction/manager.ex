@@ -1,13 +1,14 @@
 defmodule Miniapp.Transaction.Manager do
   alias Miniapp.Transaction.Lifecycle
 
-  def request_transaction(transaction, user_address) do
+  def request_transaction(transaction, user_address, opts \\ []) do
     transaction_id = generate_transaction_id()
 
     start_opts = [
       transaction_id: transaction_id,
       user_address: user_address,
-      transaction: transaction
+      transaction: transaction,
+      user_fid: Keyword.get(opts, :user_fid)
     ]
 
     with {:ok, _pid} <-
