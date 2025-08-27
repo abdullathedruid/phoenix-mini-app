@@ -2,7 +2,6 @@ defmodule MiniappWeb.WalletLive do
   require Logger
   alias Miniapp.Transaction
   use MiniappWeb, :live_view
-  alias Miniapp.Transaction.Events
 
   @impl true
   def mount(_params, _session, socket) do
@@ -195,57 +194,29 @@ defmodule MiniappWeb.WalletLive do
 
   @impl true
   def handle_info(
-        {:transaction_event, %Events.RequestSendCalls{calls: calls, transaction_id: id}},
+        {:transaction_event, event},
         socket
       ) do
     {:noreply,
      socket
-     |> push_event("client:request", %{
-       id: id,
-       action: "send_calls",
-       params: %{
-         "calls" => calls,
-         "capabilities" => %{
-           "paymasterService" => %{"url" => paymaster_proxy_url_with_token(socket)}
-         }
-       }
-     })}
+     |> push_event("client:request", event)}
   end
 
-  @impl true
-  def handle_info(
-        {:transaction_event,
-         %Events.RequestPollSendCalls{
-           transaction_id: transaction_id,
-           send_calls_id: send_calls_id
-         }},
-        socket
-      ) do
-    {:noreply,
-     socket
-     |> push_event("client:request", %{
-       id: transaction_id,
-       action: "wait_for_calls_status",
-       params: %{
-         "id" => send_calls_id
-       }
-     })}
-  end
+  # TODO: we should move this to a helper module specific to paymaster
+  # defp paymaster_proxy_url do
+  #   MiniappWeb.Endpoint.url() <> "/api/paymaster"
+  # end
 
-  defp paymaster_proxy_url do
-    MiniappWeb.Endpoint.url() <> "/api/paymaster"
-  end
+  # defp paymaster_proxy_url_with_token(socket) do
+  #   sender = socket.assigns[:connected_address]
 
-  defp paymaster_proxy_url_with_token(socket) do
-    sender = socket.assigns[:connected_address]
+  #   claims = %{
+  #     "fid" => socket.assigns[:user_fid],
+  #     "ts" => System.system_time(:second),
+  #     "sender" => is_binary(sender) && String.downcase(sender)
+  #   }
 
-    claims = %{
-      "fid" => socket.assigns[:user_fid],
-      "ts" => System.system_time(:second),
-      "sender" => is_binary(sender) && String.downcase(sender)
-    }
-
-    token = MiniappWeb.Plugs.PaymasterAuth.sign_token(claims)
-    paymaster_proxy_url() <> "?token=" <> token
-  end
+  #   token = MiniappWeb.Plugs.PaymasterAuth.sign_token(claims)
+  #   paymaster_proxy_url() <> "?token=" <> token
+  # end
 end

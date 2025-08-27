@@ -12,7 +12,7 @@ defmodule Miniapp.Transaction.Pubsub do
     :ok
   end
 
-  def broadcast_event(user_address, event) do
+  def broadcast_event(event, user_address) do
     Phoenix.PubSub.broadcast(
       @pubsub,
       transaction_events_topic(user_address),

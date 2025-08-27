@@ -1,10 +1,11 @@
 defmodule Miniapp.Transaction.Lifecycle do
-  alias Miniapp.Transaction.Monitor
-  alias Miniapp.Transaction.{Events, Pubsub}
+  alias Miniapp.Client.Dispatcher
+  alias Miniapp.Transaction.{Monitor, Pubsub}
+
   require Logger
   @behaviour :gen_statem
 
-  defstruct ~w(transaction_id user_address transaction state started_at)a
+  defstruct ~w(transaction_id user_address transaction state started_at send_calls_id)a
 
   @impl :gen_statem
   def callback_mode, do: [:state_functions, :state_enter]
@@ -13,6 +14,7 @@ defmodule Miniapp.Transaction.Lifecycle do
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [opts]},
+      restart: :transient
     }
   end
 
@@ -36,149 +38,104 @@ defmodule Miniapp.Transaction.Lifecycle do
     user_address = Keyword.fetch!(opts, :user_address)
     transaction = Keyword.fetch!(opts, :transaction)
 
-    measurements = %{system_time: System.system_time(), monotonic_time: System.monotonic_time()}
-    Monitor.execute(:started, measurements, %{transaction_id: transaction_id})
+    Monitor.execute(:started, %{}, %{transaction_id: transaction_id})
 
     state = %__MODULE__{
       transaction_id: transaction_id,
       user_address: user_address,
-      transaction: transaction,
-      started_at: System.system_time(:millisecond)
+      transaction: transaction
     }
 
     {:ok, :building, state, {:next_event, :internal, :build_transaction}}
   end
 
   @impl :gen_statem
-  def terminate(reason, current_state, data) do
-    Logger.warning("Terminating")
-    dbg()
+  def terminate(_reason, _current_state, data) do
+    Monitor.execute([:ended], %{}, %{transaction_id: data.transaction_id})
     :ok
   end
 
   # State callbacks
 
   def building(:enter, :building, data) do
-    measurements = %{system_time: System.system_time(), monotonic_time: System.monotonic_time()}
-    Monitor.execute([:building, :started], measurements, %{transaction_id: data.transaction_id})
+    Monitor.execute([:building, :started], %{}, %{transaction_id: data.transaction_id})
 
     :keep_state_and_data
   end
 
   def building(:internal, :build_transaction, data) do
     # DO WORK
-    event = %Events.RequestSendCalls{
-      transaction_id: data.transaction_id,
+    %Miniapp.Client.Events.SendCalls{
+      account: data.user_address,
       calls: data.transaction,
-      capabilities: %{},
-      timestamp: System.system_time(:millisecond)
+      capabilities: %{}
     }
+    |> Dispatcher.build_request(id: data.transaction_id)
+    |> Pubsub.broadcast_event(data.user_address)
 
-    Pubsub.broadcast_event(data.user_address, event)
-
-    measurements = %{system_time: System.system_time(), monotonic_time: System.monotonic_time()}
-    Monitor.execute([:building, :ended], measurements, %{transaction_id: data.transaction_id})
+    Monitor.execute([:building, :ended], %{}, %{transaction_id: data.transaction_id})
 
     {:next_state, :requested, data}
   end
 
   def requested(:enter, :building, data) do
-    measurements = %{system_time: System.system_time(), monotonic_time: System.monotonic_time()}
-    Monitor.execute([:requested, :started], measurements, %{transaction_id: data.transaction_id})
+    Monitor.execute([:requested, :started], %{}, %{transaction_id: data.transaction_id})
 
     :keep_state_and_data
   end
 
-  def requested(:cast, {:send_calls, response}, data) do
-    Logger.info("Received send calls response #{inspect(response)}")
-    {:keep_state, data}
+  def requested(:cast, {:send_calls, %{"ok" => false} = response}, data) do
+    Logger.warning("Received send calls failure #{inspect(response)}")
+    Monitor.execute([:requested, :ended], %{}, %{transaction_id: data.transaction_id})
+    {:stop, {:shutdown, :user_rejected}}
   end
 
-  @impl true
-  def handle_info(:start_transaction, %{state: :initializing} = state) do
-    # We might need to do some logic here
-    new_state = %{state | state: :awaiting_send_calls}
-
-    event = %Events.RequestSendCalls{
-      transaction_id: state.transaction_id,
-      calls: state.transaction,
-      capabilities: %{},
-      timestamp: System.system_time(:millisecond)
-    }
-
-    Pubsub.broadcast_event(state.user_address, event)
-
-    {:noreply, new_state}
-  end
-
-  @impl true
-  def handle_cast(
-        {:send_calls,
-         %{
-           "ok" => true,
-           "result" => %{"id" => send_calls_id} = response,
-           "id" => transaction_id
-         }},
-        %{state: :awaiting_send_calls, transaction_id: transaction_id} = state
+  def requested(
+        :cast,
+        {:send_calls, %{"ok" => true, "result" => %{"id" => send_calls_id}} = response},
+        data
       ) do
-    new_state = %{state | state: :calls_sent}
+    Logger.info("Received send calls success #{inspect(response)}")
+    data = %{data | send_calls_id: send_calls_id}
+    Monitor.execute([:requested, :ended], %{}, %{transaction_id: data.transaction_id})
+    {:next_state, :waiting_for_calls_status, data}
+  end
 
-    event = %Events.RequestPollSendCalls{
-      transaction_id: state.transaction_id,
-      send_calls_id: send_calls_id,
-      capabilities: Map.get(response, "capabilities"),
-      timestamp: System.system_time(:millisecond)
+  def waiting_for_calls_status(:enter, :requested, data) do
+    %Miniapp.Client.Events.WaitForCallsStatus{
+      id: data.send_calls_id
     }
+    |> Dispatcher.build_request(id: data.transaction_id)
+    |> Pubsub.broadcast_event(data.user_address)
 
-    measurements = %{system_time: event.timestamp}
-    :telemetry.execute([:transaction, :broadcasted], measurements, %{call_id: send_calls_id})
+    Monitor.execute([:waiting_for_calls_status, :started], %{}, %{
+      transaction_id: data.transaction_id
+    })
 
-    Pubsub.broadcast_event(state.user_address, event)
-
-    {:noreply, new_state}
+    :keep_state_and_data
   end
 
-  @impl true
-  def handle_cast({:send_calls, _response}, state) do
-    new_state = %{state | state: :failed}
+  def waiting_for_calls_status(:cast, {:wait_for_calls_status, %{"ok" => false} = response}, data) do
+    Logger.warning("Received wait for calls status failure #{inspect(response)}")
 
-    measurements = %{duration: System.monotonic_time() - state.started_at}
-    :telemetry.execute([:transaction, :failed], measurements, %{reason: :send_calls_failure})
+    Monitor.execute([:waiting_for_calls_status, :ended], %{}, %{
+      transaction_id: data.transaction_id
+    })
 
-    {:stop, :normal, new_state}
+    {:stop, {:shutdown, :transaction_failed}}
   end
 
-  @impl true
-  def handle_cast(
-        {:wait_for_calls_status,
-         %{
-           "ok" => true,
-           "id" => transaction_id,
-           "result" => %{
-             "receipts" => receipts,
-             "status" => status
-           }
-         }},
-        %{state: :calls_sent, transaction_id: transaction_id} = state
-      ) do
-    new_state = %{state | state: :completed}
+  def waiting_for_calls_status(:cast, {:wait_for_calls_status, %{"ok" => true} = response}, data) do
+    Logger.info("Received wait for calls status success #{inspect(response)}")
 
-    measurements = %{duration: System.monotonic_time() - state.started_at}
-    :telemetry.execute([:transaction, :completed], measurements, %{receipts: receipts, status: status})
+    Monitor.execute([:waiting_for_calls_status, :ended], %{}, %{
+      transaction_id: data.transaction_id
+    })
 
-    {:stop, :normal, new_state}
+    {:stop, {:shutdown, :transaction_completed}}
   end
 
-  @impl true
-  def handle_cast({:wait_for_calls_status, _response}, state) do
-    new_state = %{state | state: :failed}
-
-    measurements = %{duration: System.monotonic_time() - state.started_at}
-    :telemetry.execute([:transaction, :failed], measurements, %{reason: :wait_for_calls_status_failure})
-
-    {:stop, :normal, new_state}
-  end
-
+  @impl :gen_statem
   def handle_event(atom, oldState, currentState, data) do
     Logger.warning("Unhandled event")
     dbg()

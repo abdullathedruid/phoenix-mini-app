@@ -11,10 +11,25 @@ defmodule Miniapp.Transaction.Monitor do
   end
 
   def execute(event, measurements, meta) when is_list(event) do
-    :telemetry.execute([:transaction] ++ event, measurements, meta)
+    base_measurements = %{
+      system_time: System.system_time(),
+      monotonic_time: System.monotonic_time()
+    }
+
+    :telemetry.execute([:transaction] ++ event, Map.merge(base_measurements, measurements), meta)
   end
+
   def execute(event, measurements, meta) when is_atom(event) do
-    :telemetry.execute([:transaction] ++ [event], measurements, meta)
+    base_measurements = %{
+      system_time: System.system_time(),
+      monotonic_time: System.monotonic_time()
+    }
+
+    :telemetry.execute(
+      [:transaction] ++ [event],
+      Map.merge(base_measurements, measurements),
+      meta
+    )
   end
 
   defp attach_handlers(_opts) do
@@ -22,11 +37,13 @@ defmodule Miniapp.Transaction.Monitor do
       {__MODULE__, :transaction_monitor},
       [
         [:transaction, :started],
-        [:transaction, :broadcasted],
-        [:transaction, :completed],
-        [:transaction, :failed],
+        [:transaction, :ended],
         [:transaction, :building, :started],
-        [:transaction, :building, :ended]
+        [:transaction, :building, :ended],
+        [:transaction, :requested, :started],
+        [:transaction, :requested, :ended],
+        [:transaction, :waiting_for_calls_status, :started],
+        [:transaction, :waiting_for_calls_status, :ended]
       ],
       &__MODULE__.handle_telemetry_event/4,
       %{}
@@ -34,12 +51,16 @@ defmodule Miniapp.Transaction.Monitor do
   end
 
   def handle_telemetry_event(event, measurements, meta, config) do
-    Logger.info("Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}")
+    Logger.info(
+      "Telemetry event #{inspect(event)} #{inspect(measurements)} #{inspect(meta)} #{inspect(config)}"
+    )
+
     :ok
   end
 
   def handle_telemetry_event([:transaction, :started], _measurements, meta, _config) do
-  dbg()
+    dbg()
+
     OpentelemetryTelemetry.start_telemetry_span(
       @tracer_id,
       "transaction",
@@ -48,8 +69,9 @@ defmodule Miniapp.Transaction.Monitor do
     )
   end
 
-  def handle_telemetry_event([:transaction, ended], measurements, meta, config) when ended in [:completed, :failed] do
-  dbg()
+  def handle_telemetry_event([:transaction, ended], measurements, meta, config)
+      when ended in [:completed, :failed] do
+    dbg()
     ctx = OpentelemetryTelemetry.set_current_telemetry_span(@tracer_id, meta)
     duration_ms = System.convert_time_unit(measurements.duration, :native, :millisecond)
     Span.set_attribute(ctx, :duration_ms, duration_ms)
@@ -57,8 +79,8 @@ defmodule Miniapp.Transaction.Monitor do
   end
 
   def handle_telemetry_event([:transaction, :broadcasted], _measurements, meta, _config) do
-  dbg()
+    dbg()
     ctx = OpentelemetryTelemetry.set_current_telemetry_span(@tracer_id, meta)
-  Span.add_event(ctx,"transaction-broadcasted", %{})
+    Span.add_event(ctx, "transaction-broadcasted", %{})
   end
 end
