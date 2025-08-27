@@ -84,31 +84,29 @@
       "type": "stat"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "prometheus",
       "description": "Transactions per second by status.",
-      "fieldConfig": {"defaults": {"custom": {}}, "overrides": []},
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "spanNulls": 120000,
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {"h": 8, "w": 16, "x": 8, "y": 1},
-      "hiddenSeries": false,
       "id": 3,
-      "legend": {"alignAsTable": true, "current": true, "max": true, "rightSide": true, "show": true, "values": true},
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null as zero",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "expr": "sum(irate(miniapp_transaction_total_count{job=\"$job\", instance=\"$instance\"}[$interval])) by (status)",
@@ -117,15 +115,8 @@
           "refId": "A"
         }
       ],
-      "thresholds": [],
       "title": "Transactions Rate by Status",
-      "tooltip": {"shared": true, "sort": 2, "value_type": "individual"},
-      "type": "graph",
-      "xaxis": {"mode": "time", "show": true},
-      "yaxes": [
-        {"format": "short", "label": "Transactions/s", "logBase": 1, "min": "0", "show": true},
-        {"format": "short", "logBase": 1, "show": false}
-      ]
+      "type": "timeseries"
     },
 
     {"collapsed": false, "datasource": null, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9}, "id": 4, "panels": [], "title": "Durations Heatmaps", "type": "row"},
@@ -242,31 +233,29 @@
     {"collapsed": false, "datasource": null, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 34}, "id": 9, "panels": [], "title": "Average Durations", "type": "row"},
 
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "prometheus",
       "description": "Average total transaction duration by status.",
-      "fieldConfig": {"defaults": {"custom": {}}, "overrides": []},
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "spanNulls": 120000,
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {"h": 10, "w": 12, "x": 0, "y": 35},
-      "hiddenSeries": false,
       "id": 10,
-      "legend": {"alignAsTable": true, "current": true, "max": true, "rightSide": true, "show": true, "values": true},
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null as zero",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "expr": "sum(irate(miniapp_transaction_total_duration_ms_sum{job=\"$job\", instance=\"$instance\"}[$interval])) by (status) / sum(irate(miniapp_transaction_total_duration_ms_count{job=\"$job\", instance=\"$instance\"}[$interval])) by (status)",
@@ -276,40 +265,32 @@
         }
       ],
       "title": "Average Total Duration",
-      "tooltip": {"shared": true, "sort": 2, "value_type": "individual"},
-      "type": "graph",
-      "xaxis": {"mode": "time", "show": true},
-      "yaxes": [
-        {"format": "ms", "label": "Duration", "logBase": 1, "min": "0", "show": true},
-        {"format": "short", "logBase": 1, "show": false}
-      ]
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "prometheus",
       "description": "Average building stage duration by status.",
-      "fieldConfig": {"defaults": {"custom": {}}, "overrides": []},
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "spanNulls": 120000,
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {"h": 10, "w": 12, "x": 12, "y": 35},
-      "hiddenSeries": false,
       "id": 11,
-      "legend": {"alignAsTable": true, "current": true, "max": true, "rightSide": true, "show": true, "values": true},
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null as zero",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "expr": "sum(irate(miniapp_transaction_building_duration_ms_sum{job=\"$job\", instance=\"$instance\"}[$interval])) by (status) / sum(irate(miniapp_transaction_building_duration_ms_count{job=\"$job\", instance=\"$instance\"}[$interval])) by (status)",
@@ -319,40 +300,32 @@
         }
       ],
       "title": "Average Building Duration",
-      "tooltip": {"shared": true, "sort": 2, "value_type": "individual"},
-      "type": "graph",
-      "xaxis": {"mode": "time", "show": true},
-      "yaxes": [
-        {"format": "ms", "label": "Duration", "logBase": 1, "min": "0", "show": true},
-        {"format": "short", "logBase": 1, "show": false}
-      ]
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "prometheus",
       "description": "Average requested stage duration by status.",
-      "fieldConfig": {"defaults": {"custom": {}}, "overrides": []},
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "spanNulls": 120000,
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {"h": 10, "w": 12, "x": 0, "y": 45},
-      "hiddenSeries": false,
       "id": 12,
-      "legend": {"alignAsTable": true, "current": true, "max": true, "rightSide": true, "show": true, "values": true},
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null as zero",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "expr": "sum(irate(miniapp_transaction_requested_duration_ms_sum{job=\"$job\", instance=\"$instance\"}[$interval])) by (status) / sum(irate(miniapp_transaction_requested_duration_ms_count{job=\"$job\", instance=\"$instance\"}[$interval])) by (status)",
@@ -362,40 +335,32 @@
         }
       ],
       "title": "Average Requested Duration",
-      "tooltip": {"shared": true, "sort": 2, "value_type": "individual"},
-      "type": "graph",
-      "xaxis": {"mode": "time", "show": true},
-      "yaxes": [
-        {"format": "ms", "label": "Duration", "logBase": 1, "min": "0", "show": true},
-        {"format": "short", "logBase": 1, "show": false}
-      ]
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "prometheus",
       "description": "Average waiting-for-calls-status stage duration by status.",
-      "fieldConfig": {"defaults": {"custom": {}}, "overrides": []},
-      "fill": 1,
-      "fillGradient": 0,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "spanNulls": 120000,
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {"h": 10, "w": 12, "x": 12, "y": 45},
-      "hiddenSeries": false,
       "id": 13,
-      "legend": {"alignAsTable": true, "current": true, "max": true, "rightSide": true, "show": true, "values": true},
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null as zero",
-      "percentage": false,
-      "pluginVersion": "7.1.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"]},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
       "targets": [
         {
           "expr": "sum(irate(miniapp_transaction_waiting_for_calls_status_duration_ms_sum{job=\"$job\", instance=\"$instance\"}[$interval])) by (status) / sum(irate(miniapp_transaction_waiting_for_calls_status_duration_ms_count{job=\"$job\", instance=\"$instance\"}[$interval])) by (status)",
@@ -405,13 +370,7 @@
         }
       ],
       "title": "Average Waiting For Calls Status Duration",
-      "tooltip": {"shared": true, "sort": 2, "value_type": "individual"},
-      "type": "graph",
-      "xaxis": {"mode": "time", "show": true},
-      "yaxes": [
-        {"format": "ms", "label": "Duration", "logBase": 1, "min": "0", "show": true},
-        {"format": "short", "logBase": 1, "show": false}
-      ]
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
