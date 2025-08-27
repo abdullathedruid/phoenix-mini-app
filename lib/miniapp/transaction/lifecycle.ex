@@ -109,10 +109,12 @@ defmodule Miniapp.Transaction.Lifecycle do
     # Build capabilities including paymaster if available
     capabilities = Paymaster.build_capabilities(data.user_address, data.user_fid)
 
-    # DO WORK
+    # Build the transaction into calls using the Transaction protocol
+    calls = Miniapp.Transaction.build(data.transaction)
+
     %Miniapp.Client.Events.SendCalls{
       account: data.user_address,
-      calls: data.transaction,
+      calls: calls,
       capabilities: capabilities
     }
     |> Dispatcher.build_request(id: data.transaction_id)
