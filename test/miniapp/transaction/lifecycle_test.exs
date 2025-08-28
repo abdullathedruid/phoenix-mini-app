@@ -21,7 +21,11 @@ defmodule Miniapp.Transaction.LifecycleTest do
       transaction: transaction
     ]
 
-    {:ok, opts: opts, transaction_id: transaction_id, user_address: user_address, transaction: transaction}
+    {:ok,
+     opts: opts,
+     transaction_id: transaction_id,
+     user_address: user_address,
+     transaction: transaction}
   end
 
   describe "callback_mode/0" do
@@ -31,10 +35,17 @@ defmodule Miniapp.Transaction.LifecycleTest do
   end
 
   describe "init/1" do
-    test "initializes state correctly", %{opts: opts, transaction_id: transaction_id, user_address: user_address, transaction: transaction} do
+    test "initializes state correctly", %{
+      opts: opts,
+      transaction_id: transaction_id,
+      user_address: user_address,
+      transaction: transaction
+    } do
       result = Lifecycle.init(opts)
 
-      assert {:ok, :building, %Lifecycle{} = state, {:next_event, :internal, :build_transaction}} = result
+      assert {:ok, :building, %Lifecycle{} = state, {:next_event, :internal, :build_transaction}} =
+               result
+
       assert state.transaction_id == transaction_id
       assert state.user_address == user_address
       assert state.transaction == transaction
@@ -62,63 +73,63 @@ defmodule Miniapp.Transaction.LifecycleTest do
     test "starts and processes states correctly", %{opts: opts} do
       # Trap exits so that the test doesn't fail when the process terminates
       Process.flag(:trap_exit, true)
-      
+
       {:ok, pid} = :gen_statem.start_link(Lifecycle, opts, [])
-      
+
       # Give it time to process the initial build event
       :timer.sleep(100)
-      
+
       # The process should be alive and have transitioned to requested state
       assert Process.alive?(pid)
-      
+
       # Test successful send_calls response
       response = %{"ok" => true, "result" => %{"id" => "send_calls_123"}}
       :gen_statem.cast(pid, {:send_calls, response})
-      
+
       :timer.sleep(50)
-      
+
       # Process should still be alive and now waiting for calls status
       assert Process.alive?(pid)
-      
+
       # Test successful wait_for_calls_status response
       success_response = %{"ok" => true}
       :gen_statem.cast(pid, {:wait_for_calls_status, success_response})
-      
+
       # Process should terminate with transaction_completed
       assert_receive {:EXIT, ^pid, {:shutdown, :transaction_completed}}, 1000
     end
 
     test "handles user rejection", %{opts: opts} do
       Process.flag(:trap_exit, true)
-      
+
       {:ok, pid} = :gen_statem.start_link(Lifecycle, opts, [])
-      
+
       # Wait for building to complete
       :timer.sleep(100)
-      
+
       # Send user rejection response
       response = %{"ok" => false}
       :gen_statem.cast(pid, {:send_calls, response})
-      
+
       # Process should terminate with user_rejected
       assert_receive {:EXIT, ^pid, {:shutdown, :user_rejected}}, 1000
     end
 
     test "handles transaction failure", %{opts: opts} do
       Process.flag(:trap_exit, true)
-      
+
       {:ok, pid} = :gen_statem.start_link(Lifecycle, opts, [])
-      
+
       # Navigate to waiting_for_calls_status state
       :timer.sleep(100)
       success_response = %{"ok" => true, "result" => %{"id" => "send_calls_789"}}
       :gen_statem.cast(pid, {:send_calls, success_response})
       :timer.sleep(50)
-      
+
       # Send transaction failure response
       failure_response = %{"ok" => false}
       :gen_statem.cast(pid, {:wait_for_calls_status, failure_response})
-      
+
       # Process should terminate with transaction_failed
       assert_receive {:EXIT, ^pid, {:shutdown, :transaction_failed}}, 1000
     end
@@ -134,13 +145,13 @@ defmodule Miniapp.Transaction.LifecycleTest do
 
       # Test successful completion
       assert :ok = Lifecycle.terminate({:shutdown, :transaction_completed}, :some_state, state)
-      
+
       # Test user rejection
       assert :ok = Lifecycle.terminate({:shutdown, :user_rejected}, :some_state, state)
-      
+
       # Test transaction failure
       assert :ok = Lifecycle.terminate({:shutdown, :transaction_failed}, :some_state, state)
-      
+
       # Test normal termination
       assert :ok = Lifecycle.terminate(:normal, :some_state, state)
     end
@@ -153,12 +164,13 @@ defmodule Miniapp.Transaction.LifecycleTest do
         transaction_id: "test_tx",
         user_address: "0x1234"
       }
-      
-      log_output = capture_log(fn ->
-        result = Lifecycle.handle_event(:unknown_event, :old_state, :current_state, state)
-        assert result == :keep_state_and_data
-      end)
-      
+
+      log_output =
+        capture_log(fn ->
+          result = Lifecycle.handle_event(:unknown_event, :old_state, :current_state, state)
+          assert result == :keep_state_and_data
+        end)
+
       assert log_output =~ "Unhandled event"
     end
   end
@@ -170,12 +182,18 @@ defmodule Miniapp.Transaction.LifecycleTest do
         user_address: "0x1234",
         transaction: EmptySendToSelf.new("0x1234")
       ]
-      
+
       # Start a process to receive the cast
-      {:ok, _pid} = :gen_statem.start_link({:via, Registry, {Miniapp.Transaction.Registry, transaction_id}}, Lifecycle, opts, [])
-      
+      {:ok, _pid} =
+        :gen_statem.start_link(
+          {:via, Registry, {Miniapp.Transaction.Registry, transaction_id}},
+          Lifecycle,
+          opts,
+          []
+        )
+
       response = %{"ok" => true, "result" => %{"id" => "test_id"}}
-      
+
       # This should not raise an error
       assert :ok = Lifecycle.report_send_calls_response(transaction_id, response)
     end
@@ -183,15 +201,21 @@ defmodule Miniapp.Transaction.LifecycleTest do
     test "report_wait_for_calls_status/2 sends cast message", %{transaction_id: transaction_id} do
       opts = [
         transaction_id: transaction_id,
-        user_address: "0x1234", 
+        user_address: "0x1234",
         transaction: EmptySendToSelf.new("0x1234")
       ]
-      
+
       # Start a process to receive the cast
-      {:ok, _pid} = :gen_statem.start_link({:via, Registry, {Miniapp.Transaction.Registry, transaction_id}}, Lifecycle, opts, [])
-      
+      {:ok, _pid} =
+        :gen_statem.start_link(
+          {:via, Registry, {Miniapp.Transaction.Registry, transaction_id}},
+          Lifecycle,
+          opts,
+          []
+        )
+
       response = %{"ok" => true}
-      
+
       # This should not raise an error
       assert :ok = Lifecycle.report_wait_for_calls_status(transaction_id, response)
     end
@@ -199,9 +223,14 @@ defmodule Miniapp.Transaction.LifecycleTest do
 
   describe "child_spec/1" do
     test "returns correct child spec" do
-      opts = [transaction_id: "test", user_address: "0x1234", transaction: EmptySendToSelf.new("0x1234")]
+      opts = [
+        transaction_id: "test",
+        user_address: "0x1234",
+        transaction: EmptySendToSelf.new("0x1234")
+      ]
+
       spec = Lifecycle.child_spec(opts)
-      
+
       assert spec.id == Lifecycle
       assert spec.restart == :transient
       assert {Lifecycle, :start_link, [^opts]} = spec.start

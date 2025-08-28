@@ -5,7 +5,7 @@ defmodule Miniapp.Transaction.Paymaster do
 
   @doc """
   Builds paymaster capabilities for a transaction if paymaster is supported and configured.
-  
+
   Returns a map with paymaster service URL if conditions are met, otherwise returns empty map.
   """
   @spec build_capabilities(user_address :: String.t(), user_fid :: integer() | nil) :: map()
@@ -27,7 +27,7 @@ defmodule Miniapp.Transaction.Paymaster do
 
   @doc """
   Generates a signed paymaster proxy URL with authentication token.
-  
+
   Returns {:ok, url} if paymaster is configured, :error otherwise.
   """
   @spec paymaster_proxy_url_with_token(user_address :: String.t(), user_fid :: integer() | nil) ::

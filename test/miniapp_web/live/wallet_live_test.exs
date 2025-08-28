@@ -17,14 +17,13 @@ defmodule MiniappWeb.WalletLiveTest do
     end
 
     test "subscribes to block updates when connected", %{conn: conn} do
-      {:ok, _view, _html} = live(conn, "/embed/wallet")
+      {:ok, view, _html} = live(conn, "/embed/wallet")
 
       # Broadcast a block update
       Chain.broadcast_block_number(12345)
 
-      # Should handle the block update (we can't easily assert on assigns in tests,
-      # but we can verify no crashes occur)
-      Process.sleep(10)
+      # Should handle the block update
+      assert render(view) =~ "Latest block: 12345"
     end
   end
 
@@ -45,9 +44,9 @@ defmodule MiniappWeb.WalletLiveTest do
       view
       |> render_hook("miniapp:connect", %{"context" => context})
 
-      # Should push get_account request (we can't easily verify the push_event,
-      # but we can verify the event was handled without error)
-      assert render(view)
+      # Should push get_account request
+      assert_push_event view, "client:request", %{action: "get_account"}
+      assert render(view) =~ ~s{img src="https://example.com/avatar.jpg"}
     end
   end
 
@@ -86,7 +85,7 @@ defmodule MiniappWeb.WalletLiveTest do
       |> element("button", "Get Capabilities")
       |> render_click()
 
-      # Should not show error
+      assert_push_event view, "client:request", %{action: "get_capabilities"}
       refute render(view) =~ "connect your wallet"
     end
   end
@@ -102,12 +101,20 @@ defmodule MiniappWeb.WalletLiveTest do
       view
       |> render_hook("test_transaction")
 
-      # Should handle without error (would push connect_account request)
+      # Should prompt client to connect account
+      assert_push_event view, "client:request", %{action: "connect_account"}
       assert render(view)
     end
 
     test "sends transaction when wallet is connected", %{conn: conn} do
+      System.put_env("PAYMASTER_URL", "testurl://test/api/paymaster")
       {:ok, view, _html} = live(conn, "/embed/wallet")
+
+      # We need a fid for paymaster
+      view
+      |> render_hook("miniapp:connect", %{
+        "context" => %{"user" => %{"fid" => 123}, "client" => %{"clientFid" => 3}}
+      })
 
       # Simulate connected wallet event
       view
@@ -125,7 +132,16 @@ defmodule MiniappWeb.WalletLiveTest do
       |> element("button", "Test Transaction")
       |> render_click()
 
-      # Should handle without error
+      # Should request transaction from client
+      assert_push_event view, "client:request", %{
+        "action" => "send_calls",
+        "params" => %{
+          "account" => "0x123abc",
+          "calls" => [%{"to" => "0x123abc"}],
+          "capabilities" => %{"paymasterService" => %{"url" => _}}
+        }
+      }
+
       assert render(view)
     end
   end
